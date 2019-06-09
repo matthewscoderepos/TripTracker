@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">TripTracker</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="weather">Weather</string>
+    <string name="tides">Tides</string>
+    <string name="menu">Menu</string>
+</resources>
