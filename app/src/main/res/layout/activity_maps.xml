@@ -23,14 +23,14 @@
         android:text="@string/weather" />
 
     <Button
-        android:id="@+id/tideButton"
+        android:id="@+id/sunButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignTop="@+id/map"
         android:layout_alignEnd="@+id/map"
         android:layout_marginTop="64dp"
         android:layout_marginEnd="16dp"
-        android:text="@string/tides" />
+        android:text="@string/sun_info" />
 
     <Button
         android:id="@+id/menuButton"
@@ -41,5 +41,53 @@
         android:layout_marginStart="19dp"
         android:layout_marginTop="64dp"
         android:text="@string/menu" />
+
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/map"
+        android:layout_alignTop="@+id/map"
+        android:layout_marginStart="19dp"
+        android:layout_marginTop="160dp"
+        android:text="@string/start_trip"
+        android:visibility="gone"
+        tools:visibility="gone" />
+
+    <Button
+        android:id="@+id/tripsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/map"
+        android:layout_alignTop="@+id/map"
+        android:layout_marginStart="19dp"
+        android:layout_marginTop="208dp"
+        android:text="@string/trip_manager"
+        android:visibility="gone"
+        tools:visibility="gone" />
+
+    <Button
+        android:id="@+id/addWayButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/map"
+        android:layout_alignTop="@+id/map"
+        android:layout_marginStart="19dp"
+        android:layout_marginTop="112dp"
+        android:text="@string/add_waypoint"
+        android:visibility="gone"
+        tools:visibility="gone" />
+
+    <Button
+        android:id="@+id/waypointsButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/map"
+        android:layout_alignTop="@+id/map"
+        android:layout_marginStart="19dp"
+        android:layout_marginTop="256dp"
+        android:text="@string/waypoint_manager"
+        android:visibility="gone"
+        tools:visibility="gone" />
 
 </RelativeLayout>

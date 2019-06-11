@@ -4,4 +4,9 @@
     <string name="weather">Weather</string>
     <string name="tides">Tides</string>
     <string name="menu">Menu</string>
+    <string name="sun_info">Sun Info</string>
+    <string name="start_trip">Start Trip</string>
+    <string name="trip_manager">Trip Manager</string>
+    <string name="add_waypoint">Add Waypoint</string>
+    <string name="waypoint_manager">Waypoint Manager</string>
 </resources>

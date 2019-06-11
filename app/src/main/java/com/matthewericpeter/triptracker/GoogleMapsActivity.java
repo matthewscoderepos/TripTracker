@@ -13,6 +13,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -44,6 +45,54 @@ public class GoogleMapsActivity extends AppCompatActivity
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
     List<LatLng> route = new ArrayList<LatLng>();
+    //This location callback is the gravy of the app, it gets the location and adds markers to the map
+    LocationCallback mLocationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+
+            //this list always has a size of 1. Maybe it is returned as a list in case the location updates multiple times before this is called?
+            List<Location> locationList = locationResult.getLocations();
+
+            //If there is a new location
+            if (locationList.size() > 0) {
+
+                //Debug, shows the size of the list that is returned
+
+                //The last location in the list is the newest
+                Location location = locationList.get(locationList.size() - 1);
+                mLastLocation = location;
+
+//                //We could remove the markers, or set this if statement to a variable depending on if we are in a trip or not.
+//                //This statement will remove the last marker that was placed
+//                if (mCurrLocationMarker != null) {
+//                    mCurrLocationMarker.remove();
+//                }
+
+                //Getting the LatLng from the location
+                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+
+                /*
+                 *
+                 * ADDING THE latLng PAIRS TO THE LIST HERE
+                 *
+                 *
+                 * */
+                route.add(latLng);
+
+                //Setting up the marker that will be added to the map.
+                //These settings can be adjusted depending on any logic we want
+                MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(latLng);
+                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
+                mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+
+                //move map camera , 18 is the zoom I am using. Smaller = further away.
+                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+            }
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,18 +122,56 @@ public class GoogleMapsActivity extends AppCompatActivity
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
             layoutParams.setMargins(0, 0, 30, 30);
         }
+
+        //Getting Buttons
+        final Button menu = this.findViewById(R.id.menuButton);
+        final Button addWaypoint = this.findViewById(R.id.addWayButton);
+        final Button startTrip = this.findViewById(R.id.startButton);
+        final Button tripManager = this.findViewById(R.id.tripsButton);
+        final Button waypointManager = this.findViewById(R.id.waypointsButton);
+
+        menu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //when menu is clicked, display buttons. If clicked again, hide them
+                if (addWaypoint.getVisibility() == View.GONE){
+                    menu.setText("Close");
+                    addWaypoint.setVisibility(View.VISIBLE);
+                    startTrip.setVisibility(View.VISIBLE);
+                    tripManager.setVisibility(View.VISIBLE);
+                    waypointManager.setVisibility(View.VISIBLE);
+                }else{
+                    menu.setText("Menu");
+                    addWaypoint.setVisibility(View.GONE);
+                    startTrip.setVisibility(View.GONE);
+                    tripManager.setVisibility(View.GONE);
+                    waypointManager.setVisibility(View.GONE);
+                }
+            }
+        });
+
+
     }
 
     @Override
     public void onPause() {
         super.onPause();
 
+        //stop location updates when Activity is no longer active
+        if (mFusedLocationClient != null) {
+            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
         mLocationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 List<Location> locationList = locationResult.getLocations();
                 if (locationList.size() > 0) {
-                    Toast.makeText(getApplicationContext(),Integer.toString(locationList.size()),Toast.LENGTH_SHORT).show();
                     //The last location in the list is the newest
                     Location location = locationList.get(locationList.size() - 1);
                     mLastLocation = location;
@@ -117,15 +204,6 @@ public class GoogleMapsActivity extends AppCompatActivity
             }
         };
 
-        //stop location updates when Activity is no longer active
-        if (mFusedLocationClient != null) {
-            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
 
         if (mFusedLocationClient == null) {
             if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -154,6 +232,46 @@ public class GoogleMapsActivity extends AppCompatActivity
     @Override
     public void onRestart() {
         super.onRestart();
+
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                List<Location> locationList = locationResult.getLocations();
+                if (locationList.size() > 0) {
+                    //The last location in the list is the newest
+                    Location location = locationList.get(locationList.size() - 1);
+                    mLastLocation = location;
+                    if (mCurrLocationMarker != null) {
+                        //mCurrLocationMarker.remove();
+                    }
+
+                    //Place current location marker
+                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+
+                    /*
+                     *
+                     * ADDING THE latLng PAIRS TO THE LIST HERE
+                     *
+                     *
+                     * */
+                    route.add(latLng);
+
+
+                    MarkerOptions markerOptions = new MarkerOptions();
+                    markerOptions.position(latLng);
+                    markerOptions.title("Current Position");
+                    markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
+                    mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+
+                    //move map camera
+                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+                }
+            }
+        };
+
+
+
         if (mFusedLocationClient == null) {
             if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ContextCompat.checkSelfPermission(this,
@@ -209,57 +327,7 @@ public class GoogleMapsActivity extends AppCompatActivity
         }
     }
 
-
-    //This location callback is the gravy of the app, it gets the location and adds markers to the map
-    LocationCallback mLocationCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-
-            //this list always has a size of 1. Maybe it is returned as a list in case the location updates multiple times before this is called?
-            List<Location> locationList = locationResult.getLocations();
-
-            //If there is a new location
-            if (locationList.size() > 0) {
-
-                //Debug, shows the size of the list that is returned
-                //Toast.makeText(getApplicationContext(),Integer.toString(locationList.size()),Toast.LENGTH_SHORT).show();
-
-                //The last location in the list is the newest
-                Location location = locationList.get(locationList.size() - 1);
-                mLastLocation = location;
-
-//                //We could remove the markers, or set this if statement to a variable depending on if we are in a trip or not.
-//                //This statement will remove the last marker that was placed
-//                if (mCurrLocationMarker != null) {
-//                    mCurrLocationMarker.remove();
-//                }
-
-                //Getting the LatLng from the location
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-
-                /*
-                 *
-                 * ADDING THE latLng PAIRS TO THE LIST HERE
-                 *
-                 *
-                 * */
-                route.add(latLng);
-
-                //Setting up the marker that will be added to the map.
-                //These settings can be adjusted depending on any logic we want
-                MarkerOptions markerOptions = new MarkerOptions();
-                markerOptions.position(latLng);
-                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
-                mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
-
-                //move map camera , 18 is the zoom I am using. Smaller = further away.
-                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
-            }
-        }
-    };
-
-
+    
     // code 99 is ACCESS_FINE_LOCATION
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
