@@ -12,9 +12,13 @@ import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -38,29 +42,37 @@ import java.util.List;
 public class GoogleMapsActivity extends AppCompatActivity
         implements OnMapReadyCallback {
 
+    // code 99 is ACCESS_FINE_LOCATION
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     GoogleMap mGoogleMap;
     SupportMapFragment mapFrag;
     LocationRequest mLocationRequest;
     Location mLastLocation;
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
-    List<LatLng> route = new ArrayList<LatLng>();
+    List<LatLng> trip = new ArrayList<LatLng>();
+    List<Waypoint> waypoints = new ArrayList<Waypoint>();
+    boolean inTrip = false;
+    String tripName = "";
     //This location callback is the gravy of the app, it gets the location and adds markers to the map
-    LocationCallback mLocationCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
+    LocationCallback mLocationCallback = getmLocationCallback();
 
-            //this list always has a size of 1. Maybe it is returned as a list in case the location updates multiple times before this is called?
-            List<Location> locationList = locationResult.getLocations();
+    public LocationCallback getmLocationCallback() {
+        LocationCallback mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
 
-            //If there is a new location
-            if (locationList.size() > 0) {
+                //this list always has a size of 1. Maybe it is returned as a list in case the location updates multiple times before this is called?
+                List<Location> locationList = locationResult.getLocations();
 
-                //Debug, shows the size of the list that is returned
+                //If there is a new location
+                if (locationList.size() > 0) {
 
-                //The last location in the list is the newest
-                Location location = locationList.get(locationList.size() - 1);
-                mLastLocation = location;
+                    //Debug, shows the size of the list that is returned
+
+                    //The last location in the list is the newest
+                    Location location = locationList.get(locationList.size() - 1);
+                    mLastLocation = location;
 
 //                //We could remove the markers, or set this if statement to a variable depending on if we are in a trip or not.
 //                //This statement will remove the last marker that was placed
@@ -68,31 +80,32 @@ public class GoogleMapsActivity extends AppCompatActivity
 //                    mCurrLocationMarker.remove();
 //                }
 
-                //Getting the LatLng from the location
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    //Getting the LatLng from the location
+                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
+                    if (inTrip) {
+                        /*
+                         *
+                         * ADDING THE latLng PAIRS TO THE LIST HERE
+                         *
+                         *
+                         * */
+                        trip.add(latLng);
 
-                /*
-                 *
-                 * ADDING THE latLng PAIRS TO THE LIST HERE
-                 *
-                 *
-                 * */
-                route.add(latLng);
-
-                //Setting up the marker that will be added to the map.
-                //These settings can be adjusted depending on any logic we want
-                MarkerOptions markerOptions = new MarkerOptions();
-                markerOptions.position(latLng);
-                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
-                mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
-
-                //move map camera , 18 is the zoom I am using. Smaller = further away.
-                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+                        //Setting up the marker that will be added to the map.
+                        //These settings can be adjusted depending on any logic we want
+                        MarkerOptions markerOptions = new MarkerOptions();
+                        markerOptions.position(latLng);
+                        markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
+                        mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+                    }
+                    //move map camera , 18 is the zoom I am using. Smaller = further away.
+                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+                }
             }
-        }
-    };
-
+        };
+        return mLocationCallback;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,13 +147,13 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 //when menu is clicked, display buttons. If clicked again, hide them
-                if (addWaypoint.getVisibility() == View.GONE){
+                if (addWaypoint.getVisibility() == View.GONE) {
                     menu.setText("Close");
                     addWaypoint.setVisibility(View.VISIBLE);
                     startTrip.setVisibility(View.VISIBLE);
                     tripManager.setVisibility(View.VISIBLE);
                     waypointManager.setVisibility(View.VISIBLE);
-                }else{
+                } else {
                     menu.setText("Menu");
                     addWaypoint.setVisibility(View.GONE);
                     startTrip.setVisibility(View.GONE);
@@ -150,7 +163,127 @@ public class GoogleMapsActivity extends AppCompatActivity
             }
         });
 
+        addWaypoint.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(GoogleMapsActivity.this);
 
+                LayoutInflater inflater = getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.activity_add_waypoint, null);
+
+                builder.setView(dialogView);
+
+                final AlertDialog dialog = builder.create();
+
+                final CheckBox publicBox = dialogView.findViewById(R.id.publicBox);
+                Button okButton = dialogView.findViewById(R.id.okButton);
+                final TextView name = dialogView.findViewById(R.id.nameText);
+
+                okButton.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View v) {
+                        //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
+                        Waypoint w = new Waypoint(name.getText().toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
+                        waypoints.add(w);
+
+                        //This is debug stuff, still useful for the user to see that it was added though
+                        Toast.makeText(GoogleMapsActivity.this, "Added this location as a waypoint", Toast.LENGTH_LONG).show();
+                        Log.i("Location Added", name.getText().toString() + " " + mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
+
+                        //Make a new marker to the map at the current location
+                        MarkerOptions markerOptions = new MarkerOptions();
+                        LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+                        markerOptions.position(latLng);
+                        markerOptions.title(name.getText().toString());
+                        mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+
+                        if (publicBox.isChecked()) {
+                            //ADD TO THE PUBLIC WAYPOINT TABLE HERE.
+                        }
+
+                        //close the dialog box
+                        dialog.cancel();
+                    }
+                });
+
+                // Display the custom alert dialog on interface
+                dialog.show();
+            }
+
+        });
+
+        startTrip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(GoogleMapsActivity.this);
+
+                LayoutInflater inflater = getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.activity_start_trip, null);
+
+                builder.setView(dialogView);
+
+                final AlertDialog dialog = builder.create();
+
+                Button okButton = dialogView.findViewById(R.id.okButton);
+                final TextView name = dialogView.findViewById(R.id.nameText);
+
+
+                if (inTrip) {
+                    //We are ending the trip here, so we need to store the list and the name in an object or something
+
+                    inTrip = false;
+                    startTrip.setText("Start Trip");
+                    Toast.makeText(GoogleMapsActivity.this, tripName + " Ended", Toast.LENGTH_LONG).show();
+                    Log.i("Trip Ended", name.getText().toString());
+
+                    //ADDING THE TRIP TO A LIST OF TRIPS OR JSON OR SOMETHING
+                    //AS OF RIGHT NOW WE JUST LOSE THE latLng'S
+
+                    //clear the trip list so we can start a new trip without keeping the last trip
+                    trip.clear();
+                    //clear the map of all markers
+                    mGoogleMap.clear();
+                    //re-add the waypoint map markers
+                    AddWaypoints();
+                    dialog.cancel();
+
+                } else {
+
+                    //We are starting a trip here, so we need to get a name and set the inTrip bool to true
+                    okButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (!inTrip) {
+                                //When ok is clicked start the trip, change inTrip to true
+                                inTrip = true;
+                                tripName = name.getText().toString();
+                                startTrip.setText("End Trip");
+                                //This is debug stuff, still useful for the user to see that it was added though
+                                Toast.makeText(GoogleMapsActivity.this, name.getText().toString() + " Started", Toast.LENGTH_LONG).show();
+                                Log.i("Trip Started", name.getText().toString());
+                                dialog.cancel();
+                            }
+                        }
+                    });
+                    dialog.show();
+                }
+            }
+        });
+
+
+    }
+
+    public void AddWaypoints(){
+        for(int i = 0; i < waypoints.size(); i++){
+            Waypoint w = waypoints.get(i);
+            MarkerOptions markerOptions = new MarkerOptions();
+            LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            markerOptions.position(latLng);
+            markerOptions.title(w.name);
+            mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+
+        }
     }
 
     @Override
@@ -167,42 +300,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     public void onResume() {
         super.onResume();
 
-        mLocationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                List<Location> locationList = locationResult.getLocations();
-                if (locationList.size() > 0) {
-                    //The last location in the list is the newest
-                    Location location = locationList.get(locationList.size() - 1);
-                    mLastLocation = location;
-                    if (mCurrLocationMarker != null) {
-                        //mCurrLocationMarker.remove();
-                    }
-
-                    //Place current location marker
-                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-
-                    /*
-                     *
-                     * ADDING THE latLng PAIRS TO THE LIST HERE
-                     *
-                     *
-                     * */
-                    route.add(latLng);
-
-
-                    MarkerOptions markerOptions = new MarkerOptions();
-                    markerOptions.position(latLng);
-                    markerOptions.title("Current Position");
-                    markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
-                    mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
-
-                    //move map camera
-                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
-                }
-            }
-        };
+        mLocationCallback = getmLocationCallback();
 
 
         if (mFusedLocationClient == null) {
@@ -221,8 +319,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //Request Location Permission
                     checkLocationPermission();
                 }
-            }
-            else {
+            } else {
                 mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
                 mGoogleMap.setMyLocationEnabled(true);
             }
@@ -233,44 +330,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     public void onRestart() {
         super.onRestart();
 
-        mLocationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                List<Location> locationList = locationResult.getLocations();
-                if (locationList.size() > 0) {
-                    //The last location in the list is the newest
-                    Location location = locationList.get(locationList.size() - 1);
-                    mLastLocation = location;
-                    if (mCurrLocationMarker != null) {
-                        //mCurrLocationMarker.remove();
-                    }
-
-                    //Place current location marker
-                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-
-                    /*
-                     *
-                     * ADDING THE latLng PAIRS TO THE LIST HERE
-                     *
-                     *
-                     * */
-                    route.add(latLng);
-
-
-                    MarkerOptions markerOptions = new MarkerOptions();
-                    markerOptions.position(latLng);
-                    markerOptions.title("Current Position");
-                    markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
-                    mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
-
-                    //move map camera
-                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
-                }
-            }
-        };
-
-
+        mLocationCallback = getmLocationCallback();
 
         if (mFusedLocationClient == null) {
             if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -288,8 +348,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //Request Location Permission
                     checkLocationPermission();
                 }
-            }
-            else {
+            } else {
                 mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
                 mGoogleMap.setMyLocationEnabled(true);
             }
@@ -320,16 +379,11 @@ public class GoogleMapsActivity extends AppCompatActivity
                 //Request Location Permission
                 checkLocationPermission();
             }
-        }
-        else {
+        } else {
             mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
             mGoogleMap.setMyLocationEnabled(true);
         }
     }
-
-    
-    // code 99 is ACCESS_FINE_LOCATION
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     //Android apps are an absolute COW when dealing with permissions. If you dont ask they crash, if you ask and they user says no, they crash unless you deal with it,
     //if you ask and the user says yes, too bad because you have to check every time you call the function anyway. These 2 functions check at first and then every time we need the location of the user
@@ -353,7 +407,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                                 //Prompt the user once explanation has been shown
                                 ActivityCompat.requestPermissions(GoogleMapsActivity.this,
                                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                                        MY_PERMISSIONS_REQUEST_LOCATION );
+                                        MY_PERMISSIONS_REQUEST_LOCATION);
                             }
                         })
                         .create()
@@ -364,7 +418,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                 // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_LOCATION );
+                        MY_PERMISSIONS_REQUEST_LOCATION);
             }
         }
     }
