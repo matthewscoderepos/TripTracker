@@ -12,5 +12,6 @@
     <string name="enter_desired_name">Enter desired name</string>
     <string name="publicBox">Public</string>
     <string name="okButton">OK</string>
+    <string name="title_activity_waypoint">Waypoints</string>
 
 </resources>
