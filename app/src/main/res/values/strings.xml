@@ -13,5 +13,6 @@
     <string name="publicBox">Public</string>
     <string name="okButton">OK</string>
     <string name="title_activity_waypoint">Waypoints</string>
+    <string name = "WaypointDB">Waypoints Display: </string>
 
 </resources>
