@@ -24,16 +24,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class WaypointActivity extends AppCompatActivity {
-
+    //Get Database reference for "Waypoints" (list of all waypoints)
     DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
     DatabaseReference wayRef = rootRef.child("Waypoints");
-
-    //LayoutInflater inflater = getLayoutInflater();
-    //View v = inflater.inflate(R.layout.activity_waypoint, null);
-
-
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,8 +64,8 @@ public class WaypointActivity extends AppCompatActivity {
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 //If a new Waypoint has been changed, get the changes and update
+                //TODO:Write a method to find&update waypointa(s) that have been changed
 
-                String _name = dataSnapshot.getKey().toString();
                 System.out.println("CHANGE CHILD LISTENER ");
                 Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
                 //System.out.println("Title: " + newLoc.name);
@@ -86,12 +79,13 @@ public class WaypointActivity extends AppCompatActivity {
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
                 //Tells us if a waypoint is removed. We probably wont need this outside of testing
-
+                //Child Removed:TODO:determine if method is needed (delete if possible)
             }
 
             @Override
             public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 //Tells us if a waypoint is moved. We probably wont need this outside of testing
+                //Child Moved:TODO:determine if method is needed (delete if possible)
             }
 
             @Override
@@ -107,32 +101,29 @@ public class WaypointActivity extends AppCompatActivity {
     @Override
     protected void onStart(){
         super.onStart();
+        //TODO:Define onStart, onPause, and other necessary parameters *what are necessary?*
 
     }
 
     public void addWaypoint(DataSnapshot dataSnapshot){
-        ScrollView waypointView = findViewById(R.id.waypointView);
-
         LinearLayout ll = findViewById(R.id.layout);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
 
         //get waypoint object from dataSnapshot
-        Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
-
-        /*print testing:
-        System.out.println("Name: " + newLoc.name);
-        System.out.println("Latitude: " + newLoc.latitude);
-        System.out.println("Longitude: " + newLoc.longitude);*/
+        final Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
 
         //create button
         Button btn = new Button(this);
+
         //give the button the waypoint as a tag*might not be necessary?*
-        btn.setTag(newLoc);
+        //btn.setTag(newLoc);TODO:remove tag if we can just send waypoint object
+
         //text for waypoint, should show its actual name
         btn.setText(newLoc.name);
         btn.setLayoutParams(params);
+        final String btnText = newLoc.name;
         //add button to linear layout
         ll.addView(btn);
 
@@ -140,12 +131,12 @@ public class WaypointActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //***TODO:Give button click an action
-                //when button is clicked, get its waypoint object and do something*
-                //  *do something: send it to map or add it to a list to send later..
-
+                /*TODO:Give button click an action
+                when button is clicked, get its waypoint object and do something*
+                 do something: send it to map or add it to a list to send later..*/
+                //addWaypointToList(newLoc) ~pass waypoint to list
                 Toast.makeText(v.getContext(),
-                        "Button Clicked: ", Toast.LENGTH_LONG).show();
+                        "Button Clicked: " + newLoc.name , Toast.LENGTH_LONG).show();
             }
         });
     }
