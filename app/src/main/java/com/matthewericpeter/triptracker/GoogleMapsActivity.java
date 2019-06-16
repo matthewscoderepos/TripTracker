@@ -35,12 +35,17 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class GoogleMapsActivity extends AppCompatActivity
-        implements OnMapReadyCallback {
+        implements OnMapReadyCallback, GoogleMap.OnCameraMoveListener {
 
     // code 99 is ACCESS_FINE_LOCATION
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
@@ -53,6 +58,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     List<LatLng> trip = new ArrayList<LatLng>();
     List<Waypoint> waypoints = new ArrayList<Waypoint>();
     boolean inTrip = false;
+    boolean autoMoveCamera = true;
     String tripName = "";
     //This location callback is the gravy of the app, it gets the location and adds markers to the map
     LocationCallback mLocationCallback = getmLocationCallback();
@@ -100,7 +106,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                         mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
                     }
                     //move map camera , 18 is the zoom I am using. Smaller = further away.
-                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+                    if(autoMoveCamera)
+                        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                 }
             }
         };
@@ -134,7 +141,16 @@ public class GoogleMapsActivity extends AppCompatActivity
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
             layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
             layoutParams.setMargins(0, 0, 30, 30);
+            locationButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    autoMoveCamera = true;
+                    mLocationCallback = getmLocationCallback();
+                }
+
+            });
         }
+
 
         //Getting Buttons
         final Button menu = this.findViewById(R.id.menuButton);
@@ -186,11 +202,11 @@ public class GoogleMapsActivity extends AppCompatActivity
                         //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
                         Waypoint w = new Waypoint(name.getText().toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
                         waypoints.add(w);
+                            WriteWaypoints(w);
 
                         //This is debug stuff, still useful for the user to see that it was added though
                         Toast.makeText(GoogleMapsActivity.this, "Added this location as a waypoint", Toast.LENGTH_LONG).show();
                         Log.i("Location Added", name.getText().toString() + " " + mLastLocation.getLatitude() + " " + mLastLocation.getLongitude());
-
                         //Make a new marker to the map at the current location
                         MarkerOptions markerOptions = new MarkerOptions();
                         LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
@@ -201,17 +217,18 @@ public class GoogleMapsActivity extends AppCompatActivity
                         if (publicBox.isChecked()) {
                             //ADD TO THE PUBLIC WAYPOINT TABLE HERE.
                         }
-
+                        AddWaypoints();
                         //close the dialog box
                         dialog.cancel();
                     }
                 });
-
+                AddWaypoints();
                 // Display the custom alert dialog on interface
                 dialog.show();
             }
 
         });
+
 
         startTrip.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -249,7 +266,6 @@ public class GoogleMapsActivity extends AppCompatActivity
                     dialog.cancel();
 
                 } else {
-
                     //We are starting a trip here, so we need to get a name and set the inTrip bool to true
                     okButton.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -271,18 +287,65 @@ public class GoogleMapsActivity extends AppCompatActivity
             }
         });
 
-
     }
 
     public void AddWaypoints(){
+        Log.i("@@@", "AddWaypoints Called");
+        Log.i("@@@", Integer.toString(waypoints.size()));
         for(int i = 0; i < waypoints.size(); i++){
             Waypoint w = waypoints.get(i);
             MarkerOptions markerOptions = new MarkerOptions();
-            LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            LatLng latLng = new LatLng(w.latitude, w.longitude);
             markerOptions.position(latLng);
             markerOptions.title(w.name);
             mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
 
+        }
+    }
+
+    public void WriteWaypoints(Waypoint w){
+        try {
+            File path = getFilesDir();
+            File file = new File(path, "waypointList.txt");
+            FileOutputStream stream = new FileOutputStream(file,true);
+            try {
+                String info = w.name+","+w.latitude+","+w.longitude+",";
+                stream.write(info.getBytes());
+
+                Log.i("@@@", "Writing File - "+info);
+            } finally {
+                stream.close();
+            }
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        }
+    }
+
+    public void ReadWaypoints(){
+        String ret = "";
+
+        try {
+            InputStream inputStream = openFileInput("waypointList.txt");
+            if ( inputStream != null ) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                int size = inputStream.available();
+                char[] buffer = new char[size];
+
+                inputStreamReader.read(buffer);
+                inputStream.close();
+                ret = new String(buffer);
+                String[] info = ret.split(",");
+                Log.i("###", Integer.toString(info.length));
+                for(int i = 0;i<info.length;i = i+3) {
+                    Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i+1]), Double.parseDouble(info[i+2]));
+                    waypoints.add(w);
+                }
+                Log.i("@@@", ret);
+                inputStreamReader.close();
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -365,6 +428,11 @@ public class GoogleMapsActivity extends AppCompatActivity
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
         mGoogleMap.getUiSettings().setMyLocationButtonEnabled(true);
         mGoogleMap.getUiSettings().setCompassEnabled(true);
+        mGoogleMap.setOnCameraMoveListener(this);
+
+        //read from file and add all of the waypoints in the waypoint list
+        ReadWaypoints();
+        AddWaypoints();
 
 
         //checking for previously given permissions, then either getting location or asking for permissions
@@ -383,6 +451,13 @@ public class GoogleMapsActivity extends AppCompatActivity
             mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
             mGoogleMap.setMyLocationEnabled(true);
         }
+    }
+
+
+    //testing this
+    public void onCameraMove() {
+        autoMoveCamera = false;
+        mLocationCallback = getmLocationCallback();
     }
 
     //Android apps are an absolute COW when dealing with permissions. If you dont ask they crash, if you ask and they user says no, they crash unless you deal with it,
