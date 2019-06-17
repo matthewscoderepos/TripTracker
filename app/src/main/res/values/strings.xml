@@ -12,5 +12,6 @@
     <string name="enter_desired_name">Enter desired name</string>
     <string name="publicBox">Public</string>
     <string name="okButton">OK</string>
+    <string name="WEATHER_GOES_HERE">This is the temporary holding place for the advanced weather menu</string>
 
 </resources>
