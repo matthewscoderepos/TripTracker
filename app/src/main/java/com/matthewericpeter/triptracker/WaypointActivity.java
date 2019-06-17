@@ -131,10 +131,10 @@ public class WaypointActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         //create button
-        Button btn = new Button(this);
+        final Button btn = new Button(this);
 
         //give the button the waypoint as a tag*might not be necessary?*
-        //btn.setTag(newLoc);TODO:remove tag if we can just send waypoint object
+        btn.setTag(w); //TODO:remove tag if we can just send waypoint object
 
         //text for waypoint, should show its actual name
         btn.setText(w.name);
@@ -151,10 +151,13 @@ public class WaypointActivity extends AppCompatActivity {
                 when button is clicked, get its waypoint object and do something*
                  do something: send it to map or add it to a list to send later..*/
                 //addWaypointToList(newLoc) ~pass waypoint to list
+                //updateWaypointList(btn.getTag());
                 Toast.makeText(v.getContext(),
                         "Button Clicked: " + btnText , Toast.LENGTH_LONG).show();
             }
         });
     }
+    public void updateWaypointList(Waypoint w){
 
+    }
 }
