@@ -14,5 +14,6 @@
     <string name="okButton">OK</string>
     <string name="title_activity_waypoint">Waypoints</string>
     <string name = "WaypointDB">Waypoints Display: </string>
+    <string name="WEATHER_GOES_HERE">This is the temporary holding place for the advanced weather menu</string>
 
 </resources>
