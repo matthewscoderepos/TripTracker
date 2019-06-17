@@ -41,6 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -291,6 +292,7 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
+                intent.putExtra("LIST", (Serializable) waypoints);
                 startActivity(intent);
 
             }
