@@ -3,6 +3,7 @@ package com.matthewericpeter.triptracker;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -55,8 +56,8 @@ public class GoogleMapsActivity extends AppCompatActivity
     Location mLastLocation;
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
-    List<LatLng> trip = new ArrayList<LatLng>();
-    List<Waypoint> waypoints = new ArrayList<Waypoint>();
+    List<LatLng> trip = new ArrayList<>();
+    List<Waypoint> waypoints = new ArrayList<>();
     boolean inTrip = false;
     boolean autoMoveCamera = true;
     String tripName = "";
@@ -120,7 +121,6 @@ public class GoogleMapsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        getSupportActionBar().setTitle("Trip Tracker");
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -287,6 +287,16 @@ public class GoogleMapsActivity extends AppCompatActivity
             }
         });
 
+        tripManager.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent myIntent = new Intent(GoogleMapsActivity.this,
+                        WaypointManager.class);
+                startActivity(myIntent);
+            }
+        });
+
+
     }
 
     public void AddWaypoints(){
@@ -299,7 +309,6 @@ public class GoogleMapsActivity extends AppCompatActivity
             markerOptions.position(latLng);
             markerOptions.title(w.name);
             mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
-
         }
     }
 
@@ -307,14 +316,11 @@ public class GoogleMapsActivity extends AppCompatActivity
         try {
             File path = getFilesDir();
             File file = new File(path, "waypointList.txt");
-            FileOutputStream stream = new FileOutputStream(file,true);
-            try {
-                String info = w.name+","+w.latitude+","+w.longitude+",";
+            try (FileOutputStream stream = new FileOutputStream(file, true)) {
+                String info = w.name + "," + w.latitude + "," + w.longitude + ",";
                 stream.write(info.getBytes());
 
-                Log.i("@@@", "Writing File - "+info);
-            } finally {
-                stream.close();
+                Log.i("@@@", "Writing File - " + info);
             }
         }
         catch (IOException e) {
@@ -520,7 +526,6 @@ public class GoogleMapsActivity extends AppCompatActivity
                 } else {
                     Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show();
                 }
-                return;
             }
         }
     }
