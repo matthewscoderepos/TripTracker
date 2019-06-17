@@ -1,6 +1,7 @@
 package com.matthewericpeter.triptracker;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -23,13 +24,20 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WaypointActivity extends AppCompatActivity {
     //Get Database reference for "Waypoints" (list of all waypoints)
     DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
     DatabaseReference wayRef = rootRef.child("Waypoints");
+    List<Waypoint> waypoints = new ArrayList<Waypoint>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Intent i = getIntent();
+        waypoints = (List<Waypoint>) i.getSerializableExtra("LIST");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_waypoint);
         //Toolbar toolbar = findViewById(R.id.toolbar);
@@ -43,6 +51,11 @@ public class WaypointActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        //call function to create buttons from saved waypoints here
+        for(int count = 0; count < waypoints.size(); count++){
+            addWaypointButton(waypoints.get(count));
+        }
         wayRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
@@ -58,7 +71,7 @@ public class WaypointActivity extends AppCompatActivity {
                 System.out.println("Longitude: " + newLoc.longitude);*/
 
                 // Waypoint newPt = new Waypoint(_name, newLoc);
-                addWaypoint(dataSnapshot);
+                addWaypoints(dataSnapshot);
             }
 
             @Override
@@ -106,15 +119,17 @@ public class WaypointActivity extends AppCompatActivity {
 
     }
 
-    public void addWaypoint(DataSnapshot dataSnapshot){
+    public void addWaypoints(DataSnapshot dataSnapshot) {
+        //get waypoint object from dataSnapshot
+        final Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
+        waypoints.add(newLoc);
+        addWaypointButton(newLoc);
+    }
+    public void addWaypointButton(Waypoint w){
         LinearLayout ll = findViewById(R.id.layout);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-
-        //get waypoint object from dataSnapshot
-        final Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
-
         //create button
         Button btn = new Button(this);
 
@@ -122,9 +137,9 @@ public class WaypointActivity extends AppCompatActivity {
         //btn.setTag(newLoc);TODO:remove tag if we can just send waypoint object
 
         //text for waypoint, should show its actual name
-        btn.setText(newLoc.name);
+        btn.setText(w.name);
         btn.setLayoutParams(params);
-        final String btnText = newLoc.name;
+        final String btnText = w.name;
         //add button to linear layout
         ll.addView(btn);
 
@@ -137,7 +152,7 @@ public class WaypointActivity extends AppCompatActivity {
                  do something: send it to map or add it to a list to send later..*/
                 //addWaypointToList(newLoc) ~pass waypoint to list
                 Toast.makeText(v.getContext(),
-                        "Button Clicked: " + newLoc.name , Toast.LENGTH_LONG).show();
+                        "Button Clicked: " + btnText , Toast.LENGTH_LONG).show();
             }
         });
     }

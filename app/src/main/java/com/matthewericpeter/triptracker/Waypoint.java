@@ -1,6 +1,8 @@
 package com.matthewericpeter.triptracker;
 
-public class Waypoint {
+import java.io.Serializable;
+
+public class Waypoint implements Serializable {
     public String name;
     public double latitude;
     public double longitude;
