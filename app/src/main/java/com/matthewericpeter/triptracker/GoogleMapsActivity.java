@@ -122,7 +122,7 @@ public class GoogleMapsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        getSupportActionBar().setTitle("Trip Tracker");
+        //getSupportActionBar().setTitle("Trip Tracker");
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
