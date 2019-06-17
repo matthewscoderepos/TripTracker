@@ -79,7 +79,6 @@ public class WaypointActivity extends AppCompatActivity {
                 //If a new Waypoint has been changed, get the changes and update
                 //TODO:Write a method to find&update waypointa(s) that have been changed
 
-                String _name = dataSnapshot.getKey().toString();
                 System.out.println("CHANGE CHILD LISTENER ");
                 Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
                 //System.out.println("Title: " + newLoc.name);
