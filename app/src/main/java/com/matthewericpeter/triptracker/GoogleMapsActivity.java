@@ -41,6 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -120,7 +121,6 @@ public class GoogleMapsActivity extends AppCompatActivity
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -284,6 +284,15 @@ public class GoogleMapsActivity extends AppCompatActivity
                     });
                     dialog.show();
                 }
+            }
+        });
+        waypointManager.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
+                intent.putExtra("LIST", (Serializable) waypoints);
+                startActivity(intent);
+
             }
         });
 
