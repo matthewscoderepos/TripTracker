@@ -20,6 +20,15 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity
+            android:name=".WaypointActivity"
+            android:label="@string/title_activity_waypoint"
+            android:parentActivityName=".GoogleMapsActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.matthewericpeter.triptracker.GoogleMapsActivity" />
+        </activity>
         <activity android:name=".WaypointManager"></activity>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
@@ -35,7 +44,8 @@
 
         <activity
             android:name=".GoogleMapsActivity"
-            android:label="@string/title_activity_maps">
+            android:label="@string/title_activity_maps"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
