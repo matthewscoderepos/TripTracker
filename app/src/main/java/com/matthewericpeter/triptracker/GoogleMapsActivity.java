@@ -300,7 +300,7 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 Intent myIntent = new Intent(GoogleMapsActivity.this,
-                        WaypointManager.class);
+                        TripManager.class);
                 startActivity(myIntent);
             }
         });

@@ -29,7 +29,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.matthewericpeter.triptracker.GoogleMapsActivity" />
         </activity>
-        <activity android:name=".WaypointManager"></activity>
+        <activity android:name=".TripManager"></activity>
         <activity android:name=".WeatherActivity"></activity>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.

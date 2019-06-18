@@ -3,11 +3,11 @@ package com.matthewericpeter.triptracker;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
-public class WaypointManager extends AppCompatActivity {
+public class TripManager extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_waypoint_manager);
+        setContentView(R.layout.activity_trip_manager);
     }
 }
