@@ -309,12 +309,12 @@ public class GoogleMapsActivity extends AppCompatActivity
         this.findViewById(R.id.weatherButton).setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                avancedWeather(view);
+                advancedWeather(view);
             }
         });
     }
 
-    private void avancedWeather(View view) {
+    private void advancedWeather(View view) {
         Intent intent = new Intent(this, WeatherActivity.class);
         startActivity(intent);
     }
