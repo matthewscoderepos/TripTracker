@@ -1,19 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".TripManager">
+    tools:context=".WaypointActivity">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="355dp"
-        android:layout_height="451dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="100dp"
-        android:text="This is where we would show the trips you have saved. You can delete trips, show trips on the map, and view details about the trips you have been on."
-        android:textSize="30sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-</android.support.constraint.ConstraintLayout>
+    <include
+        android:id="@+id/include"
+        layout="@layout/content_waypoint" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        app:backgroundTint="#8D000000"
+        app:srcCompat="@android:drawable/ic_input_add" />
+
+
+    <ScrollView
+        android:id="@+id/waypointView"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="50dp"
+            android:orientation="vertical"></LinearLayout>
+    </ScrollView>
+
+</android.support.design.widget.CoordinatorLayout>

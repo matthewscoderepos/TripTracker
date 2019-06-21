@@ -43,7 +43,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 
 public class GoogleMapsActivity extends AppCompatActivity
@@ -57,7 +60,8 @@ public class GoogleMapsActivity extends AppCompatActivity
     Location mLastLocation;
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
-    List<LatLng> trip = new ArrayList<>();
+    //List<LatLng> trip = new ArrayList<>();
+    List<Trip> trips = ReadTrips();
     List<Waypoint> waypoints = new ArrayList<>();
     boolean inTrip = false;
     boolean autoMoveCamera = true;
@@ -92,13 +96,10 @@ public class GoogleMapsActivity extends AppCompatActivity
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
                     if (inTrip) {
-                        /*
-                         *
-                         * ADDING THE latLng PAIRS TO THE LIST HERE
-                         *
-                         *
-                         * */
-                        trip.add(latLng);
+                        System.out.println(latLng.latitude + " " + latLng.longitude);
+                        System.out.println(trips.size());
+                        System.out.println(trips.get(trips.size()-1).name);
+                        trips.get(trips.size()-1).route.add(latLng);
 
                         //Setting up the marker that will be added to the map.
                         //These settings can be adjusted depending on any logic we want
@@ -233,6 +234,7 @@ public class GoogleMapsActivity extends AppCompatActivity
         startTrip.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Trip trip = new Trip();
                 AlertDialog.Builder builder = new AlertDialog.Builder(GoogleMapsActivity.this);
 
                 LayoutInflater inflater = getLayoutInflater();
@@ -257,8 +259,10 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //ADDING THE TRIP TO A LIST OF TRIPS OR JSON OR SOMETHING
                     //AS OF RIGHT NOW WE JUST LOSE THE latLng'S
 
+                    WriteTrips(trip);
+
                     //clear the trip list so we can start a new trip without keeping the last trip
-                    trip.clear();
+                    trip.route.clear();
                     //clear the map of all markers
                     mGoogleMap.clear();
                     //re-add the waypoint map markers
@@ -275,6 +279,11 @@ public class GoogleMapsActivity extends AppCompatActivity
                                 inTrip = true;
                                 tripName = name.getText().toString();
                                 startTrip.setText("End Trip");
+
+                                Trip trip = new Trip();
+                                trip.name = tripName;
+                                trips.add(trip);
+                                System.out.println(trip.name);
                                 //This is debug stuff, still useful for the user to see that it was added though
                                 Toast.makeText(GoogleMapsActivity.this, name.getText().toString() + " Started", Toast.LENGTH_LONG).show();
                                 Log.i("Trip Started", name.getText().toString());
@@ -301,6 +310,8 @@ public class GoogleMapsActivity extends AppCompatActivity
             public void onClick(View v) {
                 Intent myIntent = new Intent(GoogleMapsActivity.this,
                         TripManager.class);
+                myIntent.putExtra("LIST", (Serializable) trips);
+                ReadTrips();
                 startActivity(myIntent);
             }
         });
@@ -309,12 +320,12 @@ public class GoogleMapsActivity extends AppCompatActivity
         this.findViewById(R.id.weatherButton).setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                avancedWeather(view);
+                advancedWeather(view);
             }
         });
     }
 
-    private void avancedWeather(View view) {
+    private void advancedWeather(View view) {
         Intent intent = new Intent(this, WeatherActivity.class);
         startActivity(intent);
     }
@@ -373,6 +384,62 @@ public class GoogleMapsActivity extends AppCompatActivity
         }catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void WriteTrips(Trip t){
+        //writes a comma seperated list of latlngs for the trip then a # character to show the end of the trip
+        try {
+            String delim = "#";
+            File path = getFilesDir();
+            File file = new File(path, "tripList.txt");
+            try (FileOutputStream stream = new FileOutputStream(file, true)) {
+                String info = t.name + ",";
+                stream.write(info.getBytes());
+                for (int i = 0; i < t.route.size(); i++) {
+                   info = t.route.get(i).latitude + "," +t.route.get(i).longitude + ",";
+                    stream.write(info.getBytes());
+                }
+                stream.write(delim.getBytes());
+                Log.i("@@@", "Writing File - trips");
+            }
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        }
+    }
+
+    public List<Trip> ReadTrips(){
+        String ret;
+        List<Trip> trips = new ArrayList<>();
+        try {
+            InputStream inputStream = openFileInput("tripList.txt");
+            if ( inputStream != null ) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                int size = inputStream.available();
+                char[] buffer = new char[size];
+
+                inputStreamReader.read(buffer);
+                inputStream.close();
+                ret = new String(buffer);
+                String[] tripListString = ret.split("#");
+                String[][] tripsInfoString = new String[tripListString.length][];
+                Trip t = new Trip();
+                for (int i = 0; i < tripListString.length; i++) {
+                    tripsInfoString[i] = tripListString[i].split(",");
+                    t.name = tripsInfoString[i][0];
+                    for (int j = 1; j < tripsInfoString[i].length; j = j+2){
+                        LatLng latLng = new LatLng(Double.parseDouble(tripsInfoString[i][j]),Double.parseDouble(tripsInfoString[i][j+1]));
+                        t.route.add(latLng);
+                    }
+                }
+
+                inputStreamReader.close();
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return trips;
     }
 
     @Override
