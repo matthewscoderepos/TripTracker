@@ -4,12 +4,15 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Region;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -37,10 +40,14 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,7 +68,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
     //List<LatLng> trip = new ArrayList<>();
-    List<Trip> trips = ReadTrips();
+    List<Trip> trips = new ArrayList<>();
     List<Waypoint> waypoints = new ArrayList<>();
     boolean inTrip = false;
     boolean autoMoveCamera = true;
@@ -98,8 +105,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                     if (inTrip) {
                         System.out.println(latLng.latitude + " " + latLng.longitude);
                         System.out.println(trips.size());
-                        System.out.println(trips.get(trips.size()-1).name);
-                        trips.get(trips.size()-1).route.add(latLng);
+                        System.out.println(trips.get(trips.size() - 1).name);
+                        trips.get(trips.size() - 1).route.add(latLng);
 
                         //Setting up the marker that will be added to the map.
                         //These settings can be adjusted depending on any logic we want
@@ -109,7 +116,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                         mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
                     }
                     //move map camera , 18 is the zoom I am using. Smaller = further away.
-                    if(autoMoveCamera)
+                    if (autoMoveCamera)
                         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                 }
             }
@@ -203,7 +210,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                         //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
                         Waypoint w = new Waypoint(name.getText().toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
                         waypoints.add(w);
-                            WriteWaypoints(w);
+                        WriteWaypoints(w);
 
                         //This is debug stuff, still useful for the user to see that it was added though
                         Toast.makeText(GoogleMapsActivity.this, "Added this location as a waypoint", Toast.LENGTH_LONG).show();
@@ -259,7 +266,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //ADDING THE TRIP TO A LIST OF TRIPS OR JSON OR SOMETHING
                     //AS OF RIGHT NOW WE JUST LOSE THE latLng'S
 
-                    WriteTrips(trip);
+                    WriteTrips();
 
                     //clear the trip list so we can start a new trip without keeping the last trip
                     trip.route.clear();
@@ -310,19 +317,20 @@ public class GoogleMapsActivity extends AppCompatActivity
             public void onClick(View v) {
                 Intent myIntent = new Intent(GoogleMapsActivity.this,
                         TripManager.class);
-                myIntent.putExtra("LIST", (Serializable) trips);
-                ReadTrips();
+
+                //myIntent.putExtra("LIST", (Serializable) trips);
                 startActivity(myIntent);
             }
         });
 
 
-        this.findViewById(R.id.weatherButton).setOnClickListener(new View.OnClickListener(){
+        this.findViewById(R.id.weatherButton).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view){
+            public void onClick(View view) {
                 advancedWeather(view);
             }
         });
+
     }
 
     private void advancedWeather(View view) {
@@ -330,10 +338,10 @@ public class GoogleMapsActivity extends AppCompatActivity
         startActivity(intent);
     }
 
-    public void AddWaypoints(){
+    public void AddWaypoints() {
         Log.i("@@@", "AddWaypoints Called");
         Log.i("@@@", Integer.toString(waypoints.size()));
-        for(int i = 0; i < waypoints.size(); i++){
+        for (int i = 0; i < waypoints.size(); i++) {
             Waypoint w = waypoints.get(i);
             MarkerOptions markerOptions = new MarkerOptions();
             LatLng latLng = new LatLng(w.latitude, w.longitude);
@@ -343,7 +351,7 @@ public class GoogleMapsActivity extends AppCompatActivity
         }
     }
 
-    public void WriteWaypoints(Waypoint w){
+    public void WriteWaypoints(Waypoint w) {
         try {
             File path = getFilesDir();
             File file = new File(path, "waypointList.txt");
@@ -353,18 +361,17 @@ public class GoogleMapsActivity extends AppCompatActivity
 
                 Log.i("@@@", "Writing File - " + info);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             Log.e("Exception", "File write failed: " + e.toString());
         }
     }
 
-    public void ReadWaypoints(){
+    public void ReadWaypoints() {
         String ret = "";
 
         try {
             InputStream inputStream = openFileInput("waypointList.txt");
-            if ( inputStream != null ) {
+            if (inputStream != null) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 int size = inputStream.available();
                 char[] buffer = new char[size];
@@ -374,72 +381,46 @@ public class GoogleMapsActivity extends AppCompatActivity
                 ret = new String(buffer);
                 String[] info = ret.split(",");
                 Log.i("###", Integer.toString(info.length));
-                for(int i = 0;i<info.length;i = i+3) {
-                    Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i+1]), Double.parseDouble(info[i+2]));
+                for (int i = 0; i < info.length; i = i + 3) {
+                    Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i + 1]), Double.parseDouble(info[i + 2]));
                     waypoints.add(w);
                 }
                 Log.i("@@@", ret);
                 inputStreamReader.close();
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void WriteTrips(Trip t){
+    public void WriteTrips() {
         //writes a comma seperated list of latlngs for the trip then a # character to show the end of the trip
         try {
             String delim = "#";
             File path = getFilesDir();
             File file = new File(path, "tripList.txt");
-            try (FileOutputStream stream = new FileOutputStream(file, true)) {
-                String info = t.name + ",";
-                stream.write(info.getBytes());
-                for (int i = 0; i < t.route.size(); i++) {
-                   info = t.route.get(i).latitude + "," +t.route.get(i).longitude + ",";
+            try (FileOutputStream stream = new FileOutputStream(file,true)) {
+                for (Trip t : trips) {
+                    String info = t.name + ",";
                     stream.write(info.getBytes());
+                    for (int i = 0; i < t.route.size(); i++) {
+                        info = t.route.get(i).latitude + "," + t.route.get(i).longitude + ",";
+                        stream.write(info.getBytes());
+                    }
+                    stream.write(delim.getBytes());
+                    Log.i("@@@", "Writing File - trips");
                 }
-                stream.write(delim.getBytes());
-                Log.i("@@@", "Writing File - trips");
             }
         }
         catch (IOException e) {
             Log.e("Exception", "File write failed: " + e.toString());
         }
-    }
-
-    public List<Trip> ReadTrips(){
-        String ret;
-        List<Trip> trips = new ArrayList<>();
-        try {
-            InputStream inputStream = openFileInput("tripList.txt");
-            if ( inputStream != null ) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                int size = inputStream.available();
-                char[] buffer = new char[size];
-
-                inputStreamReader.read(buffer);
-                inputStream.close();
-                ret = new String(buffer);
-                String[] tripListString = ret.split("#");
-                String[][] tripsInfoString = new String[tripListString.length][];
-                Trip t = new Trip();
-                for (int i = 0; i < tripListString.length; i++) {
-                    tripsInfoString[i] = tripListString[i].split(",");
-                    t.name = tripsInfoString[i][0];
-                    for (int j = 1; j < tripsInfoString[i].length; j = j+2){
-                        LatLng latLng = new LatLng(Double.parseDouble(tripsInfoString[i][j]),Double.parseDouble(tripsInfoString[i][j+1]));
-                        t.route.add(latLng);
-                    }
-                }
-
-                inputStreamReader.close();
-            }
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return trips;
+//        SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+//        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
+//        Gson gson = new Gson();
+//        String json = gson.toJson(trips); //tasks is an ArrayList instance variable
+//        prefsEditor.putString("trips", json);
+//        prefsEditor.commit();
     }
 
     @Override
