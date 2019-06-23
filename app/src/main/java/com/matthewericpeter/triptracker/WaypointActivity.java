@@ -107,11 +107,6 @@ public class WaypointActivity extends AppCompatActivity {
     }
 
     @Override public void onBackPressed(){
-
-        for(int i = 0; i < outWaypoints.size(); i ++) {
-            Waypoint temp = outWaypoints.get(i);
-            System.out.println(temp.name);
-        }
         Intent returnIntent = new Intent();
         returnIntent.putExtra("LIST", (Serializable) outWaypoints);
         setResult(Activity.RESULT_OK, returnIntent);

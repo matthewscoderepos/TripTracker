@@ -48,7 +48,8 @@ import java.util.List;
 
 public class GoogleMapsActivity extends AppCompatActivity
         implements OnMapReadyCallback, GoogleMap.OnCameraMoveListener {
-
+    //code 97 is Pick a trip from the trip manager
+    static final int PICK_TRIP_REQUEST = 97;
     //code 98 is Pick waypoints from waypoint manager
     static final int PICK_WAYPOINTS_REQUEST = 98;
     // code 99 is ACCESS_FINE_LOCATION
@@ -306,6 +307,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Intent myIntent = new Intent(GoogleMapsActivity.this,
                         TripManager.class);
                 startActivity(myIntent);
+                //startActivityForResult(intent, PICK_TRIP_REQUEST);
             }
         });
 
@@ -564,12 +566,31 @@ public class GoogleMapsActivity extends AppCompatActivity
                     AddWaypoints();
                 }
                 else {
+                    //Some error handling for a problem i was having earlier.. probably not necessary anymore
                     Toast.makeText(GoogleMapsActivity.this, "Empty Waypoints recieved..",
                             Toast.LENGTH_LONG).show();
                 }
             }
             else {
+                //Error handling if the Waypoint manager doesn't close with a result
+                //This would likely be because the activity crashed somehow
                 Toast.makeText(GoogleMapsActivity.this, "Waypoints not recieved..",
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+        /*TODO: set up tripManager result handler.
+        PICK_TRIP_REQUEST code is defined up top as 97, this will be returned from the activity
+        startActivityForResult call is in the tripManager Click Listener (line310), uncomment when ready
+        to return result code see: WaypointActivity.java (lines:110-113)
+        */
+        if(requestCode == PICK_TRIP_REQUEST){
+            if(resultCode == RESULT_OK){
+                //trip manager returned with a trip, fetch and display
+            }
+            else{
+                //Error handling if the trip manager doesn't close with a result
+                //This would likely be because the activity crashed somehow
+                Toast.makeText(GoogleMapsActivity.this, "Trip not recieved..",
                         Toast.LENGTH_LONG).show();
             }
         }
