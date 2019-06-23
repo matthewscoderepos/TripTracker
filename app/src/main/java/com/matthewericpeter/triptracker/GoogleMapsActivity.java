@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Region;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,20 +40,15 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-import java.util.ListIterator;
 
 
 public class GoogleMapsActivity extends AppCompatActivity
@@ -261,9 +255,12 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Button okButton = dialogView.findViewById(R.id.okButton);
                 final TextView name = dialogView.findViewById(R.id.nameText);
 
-
+                final Date currentTime = Calendar.getInstance().getTime();
                 if (inTrip) {
                     //We are ending the trip here, so we need to store the list and the name in an object or something
+                    trips.get(trips.size() - 1).endTime = currentTime;
+                    trips.get(trips.size() - 1).endLat = mLastLocation.getLatitude();
+                    trips.get(trips.size() - 1).endLng = mLastLocation.getLongitude();
 
                     inTrip = false;
                     startTrip.setText("Start Trip");
@@ -297,6 +294,9 @@ public class GoogleMapsActivity extends AppCompatActivity
 
                                 Trip trip = new Trip();
                                 trip.name = tripName;
+                                trip.startTime = currentTime;
+                                trip.startLat = mLastLocation.getLatitude();
+                                trip.startLng = mLastLocation.getLongitude();
                                 trips.add(trip);
                                 System.out.println(trip.name);
                                 //This is debug stuff, still useful for the user to see that it was added though

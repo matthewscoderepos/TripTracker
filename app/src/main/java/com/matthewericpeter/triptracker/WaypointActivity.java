@@ -190,6 +190,7 @@ public class WaypointActivity extends AppCompatActivity {
                     Toast.makeText(v.getContext(),"Added waypoint: " + w.name,
                             Toast.LENGTH_LONG).show();
                 }
+
             }
         });
     }

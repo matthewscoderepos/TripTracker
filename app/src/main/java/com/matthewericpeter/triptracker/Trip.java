@@ -4,6 +4,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Trip implements Serializable {
@@ -19,6 +20,6 @@ public class Trip implements Serializable {
     Double startLng;
     Double endLat;
     Double endLng;
-    long startTime;
-    long endTime;
+    Date startTime;
+    Date endTime;
 }

@@ -15,5 +15,12 @@
     <string name="title_activity_waypoint">Waypoints</string>
     <string name = "WaypointDB">Waypoints Display: </string>
     <string name="WEATHER_GOES_HERE">This is the temporary holding place for the advanced weather menu</string>
+    <string name="end_time">End Time:</string>
+    <string name="start_time">Start Time:</string>
+    <string name="distance_traveled">Distance Traveled:</string>
+    <string name="average_speed">Average Speed:</string>
+    <string name="delete">Delete</string>
+    <string name="show">Show</string>
+    <string name="nameoftrip">NameOfTrip</string>
 
 </resources>
