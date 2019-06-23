@@ -53,7 +53,8 @@ import java.util.List;
 
 public class GoogleMapsActivity extends AppCompatActivity
         implements OnMapReadyCallback, GoogleMap.OnCameraMoveListener {
-
+    //code 97 is Pick a trip from the trip manager
+    static final int PICK_TRIP_REQUEST = 97;
     //code 98 is Pick waypoints from waypoint manager
     static final int PICK_WAYPOINTS_REQUEST = 98;
     // code 99 is ACCESS_FINE_LOCATION
@@ -68,7 +69,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     List<Trip> trips = new ArrayList<>();
     List<LatLng> trip = new ArrayList<>();
     List<Waypoint> localWaypoints = new ArrayList<>();
-    List<Waypoint> waypoints = new ArrayList<>();
+    List<Waypoint> displayWaypoints = new ArrayList<>();
     boolean inTrip = false;
     boolean autoMoveCamera = true;
     String tripName = "";
@@ -210,8 +211,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                         //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
                         Waypoint w = new Waypoint(name.getText().toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
                         localWaypoints.add(w);
-                        waypoints.add(w);
-                        WriteWaypoints(w);
+                        displayWaypoints.add(w);
+                            WriteWaypoints(w);
 
                         //This is debug stuff, still useful for the user to see that it was added though
                         Toast.makeText(GoogleMapsActivity.this, "Added this location as a waypoint", Toast.LENGTH_LONG).show();
@@ -314,7 +315,8 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
-                intent.putExtra("LIST", (Serializable) waypoints);
+                intent.putExtra("LIST", (Serializable) localWaypoints);
+                intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
                 startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
             }
         });
@@ -325,6 +327,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Intent myIntent = new Intent(GoogleMapsActivity.this,
                         TripManager.class);
                 startActivity(myIntent);
+                //startActivityForResult(intent, PICK_TRIP_REQUEST);
             }
         });
 
@@ -345,9 +348,9 @@ public class GoogleMapsActivity extends AppCompatActivity
 
     public void AddWaypoints() {
         Log.i("@@@", "AddWaypoints Called");
-        Log.i("@@@", Integer.toString(waypoints.size()));
-        for (int i = 0; i < waypoints.size(); i++) {
-            Waypoint w = waypoints.get(i);
+        Log.i("@@@", Integer.toString(displayWaypoints.size()));
+        for(int i = 0; i < displayWaypoints.size(); i++){
+            Waypoint w = displayWaypoints.get(i);
             MarkerOptions markerOptions = new MarkerOptions();
             LatLng latLng = new LatLng(w.latitude, w.longitude);
             markerOptions.position(latLng);
@@ -386,9 +389,9 @@ public class GoogleMapsActivity extends AppCompatActivity
                 ret = new String(buffer);
                 String[] info = ret.split(",");
                 Log.i("###", Integer.toString(info.length));
-                for (int i = 0; i < info.length; i = i + 3) {
-                    Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i + 1]), Double.parseDouble(info[i + 2]));
-                    waypoints.add(w);
+                for(int i = 0;i<info.length;i = i+3) {
+                    Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i+1]), Double.parseDouble(info[i+2]));
+                    displayWaypoints.add(w);
                     localWaypoints.add(w);
                 }
                 Log.i("@@@", ret);
@@ -442,9 +445,6 @@ public class GoogleMapsActivity extends AppCompatActivity
     @Override
     public void onResume() {
         super.onResume();
-        if(waypoints == null){
-            waypoints = new ArrayList<>();
-        }
         mLocationCallback = getmLocationCallback();
 
 
@@ -607,27 +607,40 @@ public class GoogleMapsActivity extends AppCompatActivity
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        mGoogleMap.clear();
         if(requestCode == PICK_WAYPOINTS_REQUEST){
             if (resultCode == RESULT_OK){
                 //waypointManager sent back a list of waypoints.. load them
-                if(waypoints != null) {
-                    waypoints.clear();
-                }
-                else{
-                    waypoints = new ArrayList<Waypoint>();
-                }
-                waypoints = (List<Waypoint>) data.getSerializableExtra("LIST");
-                if (waypoints != null) {
+                displayWaypoints = (List<Waypoint>) data.getSerializableExtra("LIST");
+                if (displayWaypoints != null) {
                     AddWaypoints();
                 }
-                else{
+                else {
+                    //Some error handling for a problem i was having earlier.. probably not necessary anymore
                     Toast.makeText(GoogleMapsActivity.this, "Empty Waypoints recieved..",
                             Toast.LENGTH_LONG).show();
                 }
-                //display waypoints
             }
             else {
+                //Error handling if the Waypoint manager doesn't close with a result
+                //This would likely be because the activity crashed somehow
                 Toast.makeText(GoogleMapsActivity.this, "Waypoints not recieved..",
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+        /*TODO: set up tripManager result handler.
+        PICK_TRIP_REQUEST code is defined up top as 97, this will be returned from the activity
+        startActivityForResult call is in the tripManager Click Listener (line310), uncomment when ready
+        to return result code see: WaypointActivity.java (lines:110-113)
+        */
+        if(requestCode == PICK_TRIP_REQUEST){
+            if(resultCode == RESULT_OK){
+                //trip manager returned with a trip, fetch and display
+            }
+            else{
+                //Error handling if the trip manager doesn't close with a result
+                //This would likely be because the activity crashed somehow
+                Toast.makeText(GoogleMapsActivity.this, "Trip not recieved..",
                         Toast.LENGTH_LONG).show();
             }
         }
