@@ -9,11 +9,16 @@ import java.util.List;
 public class Trip implements Serializable {
     public Trip(){
         name = "";
-        route = new ArrayList<>();
+        lat = new ArrayList<>();
+        lng = new ArrayList<>();
     }
     String name;
-    List<LatLng> route;
-    LatLng start;
-    LatLng end;
-    long timeElapsed;
+    List<Double> lat;
+    List<Double> lng;
+    Double startLat;
+    Double startLng;
+    Double endLat;
+    Double endLng;
+    long startTime;
+    long endTime;
 }

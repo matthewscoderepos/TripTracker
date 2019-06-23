@@ -12,6 +12,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.DataSnapshot;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,12 +45,12 @@ public class TripManager extends AppCompatActivity {
         final Button btn = new Button(this);
 
         //give the button the waypoint as a tag*might not be necessary?*
-        //btn.setTag(w); //TODO:remove tag if we can just send waypoint object
+        btn.setTag(t); //TODO:remove tag if we can just send waypoint object
 
         //text for waypoint, should show its actual name
         btn.setText(t.name);
         btn.setLayoutParams(params);
-        final String btnText = t.name;
+        final String btnText = String.valueOf(t.lat.get(0));
         //add button to linear layout
         ll.addView(btn);
 
@@ -68,36 +70,42 @@ public class TripManager extends AppCompatActivity {
     }
 
     public void ReadTrips() {
-        String ret;
-        try {
-            InputStream inputStream = openFileInput("tripList.txt");
-            if ( inputStream != null ) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                int size = inputStream.available();
-                char[] buffer = new char[size];
+//        String ret;
+//        try {
+//            InputStream inputStream = openFileInput("tripList.txt");
+//            if ( inputStream != null ) {
+//                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+//                int size = inputStream.available();
+//                char[] buffer = new char[size];
+//
+//                inputStreamReader.read(buffer);
+//                inputStream.close();
+//                ret = new String(buffer);
+//                System.out.println(ret);
+//                String[] tripListString = ret.split("#");
+//                String[][] tripsInfoString = new String[tripListString.length][];
+//                for (int i = 0; i < tripListString.length; i++) {
+//                    Trip t = new Trip();
+//                    tripsInfoString[i] = tripListString[i].split(",");
+//                    t.name = tripsInfoString[i][0];
+//                    for (int j = 1; j < tripsInfoString[i].length; j = j+2){
+//                        LatLng latLng = new LatLng(Double.parseDouble(tripsInfoString[i][j]),Double.parseDouble(tripsInfoString[i][j+1]));
+//                        t.route.add(latLng);
+//                    }
+//                    trips.add(t);
+//                }
+//
+//                inputStreamReader.close();
+//            }
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
-                inputStreamReader.read(buffer);
-                inputStream.close();
-                ret = new String(buffer);
-                System.out.println(ret);
-                String[] tripListString = ret.split("#");
-                String[][] tripsInfoString = new String[tripListString.length][];
-                for (int i = 0; i < tripListString.length; i++) {
-                    Trip t = new Trip();
-                    tripsInfoString[i] = tripListString[i].split(",");
-                    t.name = tripsInfoString[i][0];
-                    for (int j = 1; j < tripsInfoString[i].length; j = j+2){
-                        LatLng latLng = new LatLng(Double.parseDouble(tripsInfoString[i][j]),Double.parseDouble(tripsInfoString[i][j+1]));
-                        t.route.add(latLng);
-                    }
-                    trips.add(t);
-                }
+        SharedPreferences appSharedPrefs = PreferenceManager .getDefaultSharedPreferences(getApplicationContext());
+        Gson gson = new Gson();
+        String json = appSharedPrefs.getString("trips", "");
+        trips = gson.fromJson(json, new TypeToken<ArrayList<Trip>>(){}.getType());
 
-                inputStreamReader.close();
-            }
-        }catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }

@@ -38,6 +38,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.gson.Gson;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -106,7 +107,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                         System.out.println(latLng.latitude + " " + latLng.longitude);
                         System.out.println(trips.size());
                         System.out.println(trips.get(trips.size() - 1).name);
-                        trips.get(trips.size() - 1).route.add(latLng);
+                        trips.get(trips.size() - 1).lat.add(latLng.latitude);
+                        trips.get(trips.size() - 1).lng.add(latLng.longitude);
 
                         //Setting up the marker that will be added to the map.
                         //These settings can be adjusted depending on any logic we want
@@ -269,7 +271,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                     WriteTrips();
 
                     //clear the trip list so we can start a new trip without keeping the last trip
-                    trip.route.clear();
+                    trip.lat.clear();
+                    trip.lng.clear();
                     //clear the map of all markers
                     mGoogleMap.clear();
                     //re-add the waypoint map markers
@@ -394,33 +397,33 @@ public class GoogleMapsActivity extends AppCompatActivity
     }
 
     public void WriteTrips() {
-        //writes a comma seperated list of latlngs for the trip then a # character to show the end of the trip
-        try {
-            String delim = "#";
-            File path = getFilesDir();
-            File file = new File(path, "tripList.txt");
-            try (FileOutputStream stream = new FileOutputStream(file,true)) {
-                for (Trip t : trips) {
-                    String info = t.name + ",";
-                    stream.write(info.getBytes());
-                    for (int i = 0; i < t.route.size(); i++) {
-                        info = t.route.get(i).latitude + "," + t.route.get(i).longitude + ",";
-                        stream.write(info.getBytes());
-                    }
-                    stream.write(delim.getBytes());
-                    Log.i("@@@", "Writing File - trips");
-                }
-            }
-        }
-        catch (IOException e) {
-            Log.e("Exception", "File write failed: " + e.toString());
-        }
-//        SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-//        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
-//        Gson gson = new Gson();
-//        String json = gson.toJson(trips); //tasks is an ArrayList instance variable
-//        prefsEditor.putString("trips", json);
-//        prefsEditor.commit();
+//        //writes a comma seperated list of latlngs for the trip then a # character to show the end of the trip
+//        try {
+//            String delim = "#";
+//            File path = getFilesDir();
+//            File file = new File(path, "tripList.txt");
+//            try (FileOutputStream stream = new FileOutputStream(file,true)) {
+//                for (Trip t : trips) {
+//                    String info = t.name + ",";
+//                    stream.write(info.getBytes());
+//                    for (int i = 0; i < t.lat.size(); i++) {
+//                        info = t.lat.get(i) + "," + t.lng.get(i) + ",";
+//                        stream.write(info.getBytes());
+//                    }
+//                    stream.write(delim.getBytes());
+//                    Log.i("@@@", "Writing File - trips");
+//                }
+//            }
+//        }
+//        catch (IOException e) {
+//            Log.e("Exception", "File write failed: " + e.toString());
+//        }
+        SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(trips); //tasks is an ArrayList instance variable
+        prefsEditor.putString("trips", json);
+        prefsEditor.commit();
     }
 
     @Override
