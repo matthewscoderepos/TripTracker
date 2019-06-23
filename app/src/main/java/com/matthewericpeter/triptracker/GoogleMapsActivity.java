@@ -61,7 +61,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     FusedLocationProviderClient mFusedLocationClient;
     List<LatLng> trip = new ArrayList<>();
     List<Waypoint> localWaypoints = new ArrayList<>();
-    List<Waypoint> waypoints = new ArrayList<>();
+    List<Waypoint> displayWaypoints = new ArrayList<>();
     boolean inTrip = false;
     boolean autoMoveCamera = true;
     String tripName = "";
@@ -205,7 +205,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                         //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
                         Waypoint w = new Waypoint(name.getText().toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
                         localWaypoints.add(w);
-                        waypoints.add(w);
+                        displayWaypoints.add(w);
                             WriteWaypoints(w);
 
                         //This is debug stuff, still useful for the user to see that it was added though
@@ -294,7 +294,8 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
-                intent.putExtra("LIST", (Serializable) waypoints);
+                intent.putExtra("LIST", (Serializable) localWaypoints);
+                intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
                 startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
             }
         });
@@ -324,9 +325,9 @@ public class GoogleMapsActivity extends AppCompatActivity
 
     public void AddWaypoints(){
         Log.i("@@@", "AddWaypoints Called");
-        Log.i("@@@", Integer.toString(waypoints.size()));
-        for(int i = 0; i < waypoints.size(); i++){
-            Waypoint w = waypoints.get(i);
+        Log.i("@@@", Integer.toString(displayWaypoints.size()));
+        for(int i = 0; i < displayWaypoints.size(); i++){
+            Waypoint w = displayWaypoints.get(i);
             MarkerOptions markerOptions = new MarkerOptions();
             LatLng latLng = new LatLng(w.latitude, w.longitude);
             markerOptions.position(latLng);
@@ -368,7 +369,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Log.i("###", Integer.toString(info.length));
                 for(int i = 0;i<info.length;i = i+3) {
                     Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i+1]), Double.parseDouble(info[i+2]));
-                    waypoints.add(w);
+                    displayWaypoints.add(w);
                     localWaypoints.add(w);
                 }
                 Log.i("@@@", ret);
@@ -392,9 +393,6 @@ public class GoogleMapsActivity extends AppCompatActivity
     @Override
     public void onResume() {
         super.onResume();
-        if(waypoints == null){
-            waypoints = new ArrayList<>();
-        }
         mLocationCallback = getmLocationCallback();
 
 
@@ -557,24 +555,18 @@ public class GoogleMapsActivity extends AppCompatActivity
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        mGoogleMap.clear();
         if(requestCode == PICK_WAYPOINTS_REQUEST){
             if (resultCode == RESULT_OK){
                 //waypointManager sent back a list of waypoints.. load them
-                if(waypoints != null) {
-                    waypoints.clear();
-                }
-                else{
-                    waypoints = new ArrayList<Waypoint>();
-                }
-                waypoints = (List<Waypoint>) data.getSerializableExtra("LIST");
-                if (waypoints != null) {
+                displayWaypoints = (List<Waypoint>) data.getSerializableExtra("LIST");
+                if (displayWaypoints != null) {
                     AddWaypoints();
                 }
-                else{
+                else {
                     Toast.makeText(GoogleMapsActivity.this, "Empty Waypoints recieved..",
                             Toast.LENGTH_LONG).show();
                 }
-                //display waypoints
             }
             else {
                 Toast.makeText(GoogleMapsActivity.this, "Waypoints not recieved..",
