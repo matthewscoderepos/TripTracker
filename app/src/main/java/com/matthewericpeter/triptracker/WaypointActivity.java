@@ -2,39 +2,32 @@ package com.matthewericpeter.triptracker;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class WaypointActivity extends AppCompatActivity {
@@ -54,8 +47,8 @@ public class WaypointActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_waypoint);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        FloatingActionButton addBtn = findViewById(R.id.addBtn);
+        addBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(WaypointActivity.this);
@@ -118,6 +111,17 @@ public class WaypointActivity extends AppCompatActivity {
             }
         });
 
+        FloatingActionButton editBtn = findViewById(R.id.editBtn);
+        editBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //TODO: create edit menu
+                //open edit menu, prompt user to select a Local waypoint to edit
+                //pop the local waypoint, get changes, push new waypoint
+                Toast.makeText(WaypointActivity.this, "EDIT WAYPOINT CLICKED",
+                        Toast.LENGTH_LONG).show();
+            }
+        });
         //call function to create buttons from saved waypoints here
         for (int count = 0; count < localWaypoints.size(); count++) {
             addWaypointButton(localWaypoints.get(count));
