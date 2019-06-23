@@ -35,6 +35,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -68,6 +70,8 @@ public class GoogleMapsActivity extends AppCompatActivity
     String tripName = "";
     //This location callback is the gravy of the app, it gets the location and adds markers to the map
     LocationCallback mLocationCallback = getmLocationCallback();
+    DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
+    DatabaseReference wayRef = rootRef.child("Waypoints");
 
     public LocationCallback getmLocationCallback() {
         LocationCallback mLocationCallback = new LocationCallback() {
@@ -205,9 +209,6 @@ public class GoogleMapsActivity extends AppCompatActivity
                     public void onClick(View v) {
                         //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
                         Waypoint w = new Waypoint(name.getText().toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
-                        localWaypoints.add(w);
-                        displayWaypoints.add(w);
-                            WriteWaypoints(w);
 
                         //This is debug stuff, still useful for the user to see that it was added though
                         Toast.makeText(GoogleMapsActivity.this, "Added this location as a waypoint", Toast.LENGTH_LONG).show();
@@ -221,6 +222,12 @@ public class GoogleMapsActivity extends AppCompatActivity
 
                         if (publicBox.isChecked()) {
                             //ADD TO THE PUBLIC WAYPOINT TABLE HERE.
+                            wayRef.push().setValue(w);
+                        }
+                        else{
+                            localWaypoints.add(w);
+                            displayWaypoints.add(w);
+                            WriteWaypoints(w);
                         }
                         AddWaypoints();
                         //close the dialog box
@@ -295,7 +302,7 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
-                intent.putExtra("LIST", (Serializable) localWaypoints);
+                intent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
                 intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
                 startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
             }
@@ -561,7 +568,8 @@ public class GoogleMapsActivity extends AppCompatActivity
         if(requestCode == PICK_WAYPOINTS_REQUEST){
             if (resultCode == RESULT_OK){
                 //waypointManager sent back a list of waypoints.. load them
-                displayWaypoints = (List<Waypoint>) data.getSerializableExtra("LIST");
+                displayWaypoints = (List<Waypoint>) data.getSerializableExtra("DISPLAY_LIST");
+                localWaypoints = (List<Waypoint>) data.getSerializableExtra("LOCAL_LIST");
                 if (displayWaypoints != null) {
                     AddWaypoints();
                 }

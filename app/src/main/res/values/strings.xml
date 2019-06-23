@@ -15,5 +15,8 @@
     <string name="title_activity_waypoint">Waypoints</string>
     <string name = "WaypointDB">Waypoints Display: </string>
     <string name="WEATHER_GOES_HERE">This is the temporary holding place for the advanced weather menu</string>
-
+    <string name="enter_latitude">Enter Latitude:</string>
+    <string name="enter_longitude">Enter Longitude:</string>
+    <string name="manual_note">NOTE: to create a waypoint at your current location, please return to the
+        map and use Menu -> Add new Waypoint</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.matthewericpeter.triptracker;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,14 +11,17 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -25,6 +29,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,33 +41,86 @@ public class WaypointActivity extends AppCompatActivity {
     //Get Database reference for "Waypoints" (list of all waypoints)
     DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
     DatabaseReference wayRef = rootRef.child("Waypoints");
-    List<Waypoint> inWaypoints = new ArrayList<Waypoint>();
-    List<Waypoint> outWaypoints = new ArrayList<Waypoint>();
+    List<Waypoint> localWaypoints = new ArrayList<Waypoint>();
+    List<Waypoint> displayWaypoints = new ArrayList<Waypoint>();
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent i = getIntent();
-        inWaypoints = (List<Waypoint>) i.getSerializableExtra("LIST");
-        outWaypoints = (List<Waypoint>) i.getSerializableExtra("DISPLAY_LIST");
+        localWaypoints = (List<Waypoint>) i.getSerializableExtra("LOCAL_LIST");
+        displayWaypoints = (List<Waypoint>) i.getSerializableExtra("DISPLAY_LIST");
 
         setContentView(R.layout.activity_waypoint);
-        //Toolbar toolbar = findViewById(R.id.toolbar);
-        //setSupportActionBar(toolbar);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(WaypointActivity.this);
+
+                LayoutInflater inflater = getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.add_waypoint_manual, null);
+
+                builder.setView(dialogView);
+                final AlertDialog dialog = builder.create();
+
+                final CheckBox publicBox = dialogView.findViewById(R.id.publicBox);
+                Button okButton = dialogView.findViewById(R.id.okButton);
+                final TextView name = dialogView.findViewById(R.id.nameText);
+                final TextView latitude = dialogView.findViewById(R.id.latText);
+                final TextView longitude = dialogView.findViewById(R.id.longText);
+
+                okButton.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View v) {
+                        //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
+                        Double lat = null;
+                        Double lng = null;
+                        try{
+                            lat = Double.parseDouble((latitude.getText().toString().trim()));
+                        } catch(NumberFormatException e){
+                            Toast.makeText(WaypointActivity.this, "Latitude is not a number.. try again.",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                        try{
+                            lng = Double.parseDouble((longitude.getText().toString().trim()));
+                        } catch(NumberFormatException e){
+                            Toast.makeText(WaypointActivity.this, "Longitude is not a number.. try again.",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                        if (lat != null && lng != null) {
+                            Waypoint w = new Waypoint(name.getText().toString(), lat, lng);
+
+                            //This is debug stuff, still useful for the user to see that it was added though
+                            Toast.makeText(WaypointActivity.this, "Added this location as a waypoint", Toast.LENGTH_LONG).show();
+                            Log.i("Location Added", name.getText().toString() + " " + lat + " " +lng);
+                            //Make a new marker to the map at the current location
+
+                            if (publicBox.isChecked()) {
+                                //ADD TO THE PUBLIC WAYPOINT TABLE HERE.
+                                wayRef.push().setValue(w);
+                            }
+                            else{
+                                localWaypoints.add(w);
+                                displayWaypoints.add(w);
+                                WriteWaypoints(w);
+                                addWaypointButton(w);
+                            }
+                            //close the dialog box
+                            dialog.cancel();
+                        }
+                    }
+                });
+                dialog.show();
             }
         });
 
         //call function to create buttons from saved waypoints here
-        for (int count = 0; count < inWaypoints.size(); count++) {
-            addWaypointButton(inWaypoints.get(count));
+        for (int count = 0; count < localWaypoints.size(); count++) {
+            addWaypointButton(localWaypoints.get(count));
         }
 
         wayRef.addChildEventListener(new ChildEventListener() {
@@ -71,36 +131,25 @@ public class WaypointActivity extends AppCompatActivity {
 
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                //If a new Waypoint has been changed, get the changes and update
-                //TODO:Write a method to find&update waypointa(s) that have been changed
-
-                System.out.println("CHANGE CHILD LISTENER ");
-                Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
-                //System.out.println("Title: " + newLoc.name);
-                System.out.println("Name: " + newLoc.name);
-                System.out.println("Latitude: " + newLoc.latitude);
-                System.out.println("Longitude: " + newLoc.longitude);
-
-                // Waypoint newPt = new Waypoint(_name, newLoc);
+                //Tells us if a waypoint has been changed.
             }
 
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-                //Tells us if a waypoint is removed. We probably wont need this outside of testing
-                //Child Removed:TODO:determine if method is needed (delete if possible)
+                //Tells us if a waypoint is removed.
             }
 
             @Override
             public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                //Tells us if a waypoint is moved. We probably wont need this outside of testing
-                //Child Moved:TODO:determine if method is needed (delete if possible)
+                //Tells us if a waypoint is moved.
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 //Error catch if the database can't be loaded, probably should notify the user as this
                 //would mostly be caused by a bad connection
-                Toast.makeText(WaypointActivity.this, "Failed to connect to server, check connection and try again", Toast.LENGTH_LONG).show();
+                Toast.makeText(WaypointActivity.this, "Failed to connect to server, check connection and try again",
+                        Toast.LENGTH_LONG).show();
             }
         });
 
@@ -108,7 +157,8 @@ public class WaypointActivity extends AppCompatActivity {
 
     @Override public void onBackPressed(){
         Intent returnIntent = new Intent();
-        returnIntent.putExtra("LIST", (Serializable) outWaypoints);
+        returnIntent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
+        returnIntent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
         setResult(Activity.RESULT_OK, returnIntent);
         finish();
     }
@@ -148,13 +198,13 @@ public class WaypointActivity extends AppCompatActivity {
                 Waypoint w = (Waypoint)btn.getTag();
                 Waypoint temp = waypointDisplayed(w);
                 if(temp != null){
-                    outWaypoints.remove(temp);
+                    displayWaypoints.remove(temp);
                     btn.setText(w.name);
                     Toast.makeText(v.getContext(),"Removed waypoint: " + w.name,
                             Toast.LENGTH_LONG).show();
                 }
                 else{
-                    outWaypoints.add(w);
+                    displayWaypoints.add(w);
                     String DisplayText = w.name + "\t(Displayed)";
                     btn.setText(DisplayText);
                     Toast.makeText(v.getContext(),"Added waypoint: " + w.name,
@@ -164,11 +214,26 @@ public class WaypointActivity extends AppCompatActivity {
         });
     }
     public Waypoint waypointDisplayed(Waypoint w){
-        for (Waypoint temp : outWaypoints){
+        for (Waypoint temp : displayWaypoints){
             if (temp.name.equals(w.name)){
                 return temp;
             }
         }
         return null;
+    }
+    public void WriteWaypoints(Waypoint w){
+        try {
+            File path = getFilesDir();
+            File file = new File(path, "waypointList.txt");
+            try (FileOutputStream stream = new FileOutputStream(file, true)) {
+                String info = w.name + "," + w.latitude + "," + w.longitude + ",";
+                stream.write(info.getBytes());
+
+                Log.i("@@@", "Writing File - " + info);
+            }
+        }
+        catch (IOException e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        }
     }
 }
