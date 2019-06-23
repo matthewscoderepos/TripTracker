@@ -1,5 +1,6 @@
 package com.matthewericpeter.triptracker;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -24,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,12 +33,13 @@ public class WaypointActivity extends AppCompatActivity {
     //Get Database reference for "Waypoints" (list of all waypoints)
     DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
     DatabaseReference wayRef = rootRef.child("Waypoints");
-    List<Waypoint> waypoints = new ArrayList<Waypoint>();
+    List<Waypoint> inWaypoints = new ArrayList<Waypoint>();
+    List<Waypoint> outWaypoints = new ArrayList<Waypoint>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Intent i = getIntent();
-        waypoints = (List<Waypoint>) i.getSerializableExtra("LIST");
+        inWaypoints = (List<Waypoint>) i.getSerializableExtra("LIST");
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_waypoint);
@@ -53,24 +56,17 @@ public class WaypointActivity extends AppCompatActivity {
         });
 
         //call function to create buttons from saved waypoints here
-        for(int count = 0; count < waypoints.size(); count++){
-            addWaypointButton(waypoints.get(count));
+        if (inWaypoints != null) {
+            for (int count = 0; count < inWaypoints.size(); count++) {
+                addWaypointButton(inWaypoints.get(count), "Local");
+            }
+        }
+        else{
+            inWaypoints = new ArrayList<Waypoint>();
         }
         wayRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                //Child Added is called for each object on startup.. we can use this to get them for the list
-
-                /*String _name = dataSnapshot.getKey().toString();
-                System.out.println("ADD CHILD LISTENER ");
-                //create method to
-                Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
-                //System.out.println("Title: " + newLoc.name);
-                System.out.println("Name: " + newLoc.name);
-                System.out.println("Latitude: " + newLoc.latitude);
-                System.out.println("Longitude: " + newLoc.longitude);*/
-
-                // Waypoint newPt = new Waypoint(_name, newLoc);
                 addWaypoints(dataSnapshot);
             }
 
@@ -117,14 +113,42 @@ public class WaypointActivity extends AppCompatActivity {
         //TODO:Define onStart, onPause, and other necessary parameters *what are necessary?*
 
     }
+    @Override public void onBackPressed(){
+        for(int i = 0; i < outWaypoints.size(); i ++) {
+            Waypoint temp = outWaypoints.get(i);
+            System.out.println(temp.name);
+        }
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("LIST", (Serializable) outWaypoints);
+        setResult(Activity.RESULT_OK, returnIntent);
+        finish();
+    }
+    /*
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("LIST", (Serializable) outWaypoints);
+        setResult(Activity.RESULT_OK, returnIntent);
+        finish();
+    }
+
+    @Override
+    protected void onStop(){
+        super.onStop();
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("LIST", (Serializable) outWaypoints);
+        setResult(Activity.RESULT_OK, returnIntent);
+        finish();
+    }*/
 
     public void addWaypoints(DataSnapshot dataSnapshot) {
         //get waypoint object from dataSnapshot
         final Waypoint newLoc = dataSnapshot.getValue(Waypoint.class);
-        waypoints.add(newLoc);
-        addWaypointButton(newLoc);
+        inWaypoints.add(newLoc);
+        addWaypointButton(newLoc, "DB");
     }
-    public void addWaypointButton(Waypoint w){
+    public void addWaypointButton(Waypoint w, String type){
         LinearLayout ll = findViewById(R.id.layout);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -136,9 +160,15 @@ public class WaypointActivity extends AppCompatActivity {
         btn.setTag(w); //TODO:remove tag if we can just send waypoint object
 
         //text for waypoint, should show its actual name
-        btn.setText(w.name);
+        if (type.equals("DB")) {
+            btn.setText(w.name);
+        }
+        else if (type.equals("Local")){
+            outWaypoints.add(w);
+            String DisplayText = w.name + "\t(Displayed)";
+            btn.setText(DisplayText);
+        }
         btn.setLayoutParams(params);
-        final String btnText = w.name;
         //add button to linear layout
         ll.addView(btn);
 
@@ -146,13 +176,20 @@ public class WaypointActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /*TODO:Give button click an action
-                when button is clicked, get its waypoint object and do something*
-                 do something: send it to map or add it to a list to send later..*/
-                //addWaypointToList(newLoc) ~pass waypoint to list
-                //updateWaypointList(btn.getTag());
-                Toast.makeText(v.getContext(),
-                        "Button Clicked: " + btnText , Toast.LENGTH_LONG).show();
+                Waypoint w = (Waypoint)btn.getTag();
+                if(outWaypoints.contains(w)){
+                    outWaypoints.remove(w);
+                    btn.setText(w.name);
+                    Toast.makeText(v.getContext(),"Removed waypoint: " + w.name,
+                            Toast.LENGTH_LONG).show();
+                }
+                else{
+                    outWaypoints.add(w);
+                    String DisplayText = w.name + "\t(Displayed)";
+                    btn.setText(DisplayText);
+                    Toast.makeText(v.getContext(),"Added waypoint: " + w.name,
+                            Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
