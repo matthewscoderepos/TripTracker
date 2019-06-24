@@ -327,7 +327,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Intent myIntent = new Intent(GoogleMapsActivity.this,
                         TripManager.class);
                 startActivity(myIntent);
-                //startActivityForResult(intent, PICK_TRIP_REQUEST);
+                startActivityForResult(myIntent, PICK_TRIP_REQUEST);
+
             }
         });
 
@@ -617,14 +618,14 @@ public class GoogleMapsActivity extends AppCompatActivity
                 }
                 else {
                     //Some error handling for a problem i was having earlier.. probably not necessary anymore
-                    Toast.makeText(GoogleMapsActivity.this, "Empty Waypoints recieved..",
+                    Toast.makeText(GoogleMapsActivity.this, "Empty Waypoints recieved...",
                             Toast.LENGTH_LONG).show();
                 }
             }
             else {
                 //Error handling if the Waypoint manager doesn't close with a result
                 //This would likely be because the activity crashed somehow
-                Toast.makeText(GoogleMapsActivity.this, "Waypoints not recieved..",
+                Toast.makeText(GoogleMapsActivity.this, "Waypoints not recieved...",
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -636,6 +637,18 @@ public class GoogleMapsActivity extends AppCompatActivity
         if(requestCode == PICK_TRIP_REQUEST){
             if(resultCode == RESULT_OK){
                 //trip manager returned with a trip, fetch and display
+                Trip t = (Trip) data.getSerializableExtra("TRIP");
+                for (int i = 0; i < t.lat.size(); i++){
+                    MarkerOptions markerOptions = new MarkerOptions();
+                    LatLng latLng = new LatLng(t.lat.get(i), t.lng.get(i));
+                    markerOptions.position(latLng);
+                    //markerOptions.title(t.name);
+                    markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));
+                    mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+                }
+                LatLng latLng = new LatLng(t.lat.get(0), t.lng.get(0));
+                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+
             }
             else{
                 //Error handling if the trip manager doesn't close with a result

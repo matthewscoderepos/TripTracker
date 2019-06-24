@@ -1,5 +1,6 @@
 package com.matthewericpeter.triptracker;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,20 +15,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
-import com.google.firebase.database.DataSnapshot;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class TripManager extends AppCompatActivity {
     List<Trip> trips = new ArrayList<>();
-
+    Trip tripToSend = new Trip();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,9 +36,17 @@ public class TripManager extends AppCompatActivity {
                 addTripButton(trips.get(count));
             }
         }
+
+
+
     }
 
-
+    @Override public void onBackPressed(){
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("TRIP", (Serializable) tripToSend);
+        setResult(Activity.RESULT_OK, returnIntent);
+        finish();
+    }
 
     public void addTripButton(Trip t){
         LinearLayout ll = findViewById(R.id.layout);
@@ -65,7 +70,7 @@ public class TripManager extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Trip t = (Trip) btn.getTag();
+                final Trip t = (Trip) btn.getTag();
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(TripManager.this);
 
@@ -88,7 +93,7 @@ public class TripManager extends AppCompatActivity {
 
                 float[] results = new float[5];
                 float distanceTraveled = 0;
-                long timeElapsed = t.endTime.getTime() - t.startTime.getTime() ; //time in hours= / 3600000
+                long timeElapsed = (t.endTime.getTime() - t.startTime.getTime())/(1000*60); //time in hours= / 3600000
                 for (int i = 0; i<t.lat.size()-1;i++) {
                     Location.distanceBetween(t.lat.get(i),t.lng.get(i),t.lat.get(i+1),t.lng.get(i+1),results);
                     distanceTraveled += results[0];
@@ -96,44 +101,29 @@ public class TripManager extends AppCompatActivity {
                 distanceText.setText(String.format("%s meters", String.valueOf(distanceTraveled)));
                 distanceTraveled = distanceTraveled; //distance in kilometers = /1000
                 float speed = distanceTraveled/timeElapsed;
-                speedText.setText(String.format("%.9f meters/millisecond \n(could be mph or knots/h)", speed));
+                speedText.setText(String.format("%.9f meters/minute \n(could be mph or knots/h)", speed));
+
+
+                Button showButton = dialogView.findViewById(R.id.showButton);
+                showButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        tripToSend = t;
+                        dialog.cancel();
+                        Toast.makeText(TripManager.this, t.name + " added to the map.",
+                                Toast.LENGTH_LONG).show();
+
+                        onBackPressed();
+                    }
+                });
+
+
                 dialog.show();
             }
         });
     }
 
     public void ReadTrips() {
-//        String ret;
-//        try {
-//            InputStream inputStream = openFileInput("tripList.txt");
-//            if ( inputStream != null ) {
-//                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-//                int size = inputStream.available();
-//                char[] buffer = new char[size];
-//
-//                inputStreamReader.read(buffer);
-//                inputStream.close();
-//                ret = new String(buffer);
-//                System.out.println(ret);
-//                String[] tripListString = ret.split("#");
-//                String[][] tripsInfoString = new String[tripListString.length][];
-//                for (int i = 0; i < tripListString.length; i++) {
-//                    Trip t = new Trip();
-//                    tripsInfoString[i] = tripListString[i].split(",");
-//                    t.name = tripsInfoString[i][0];
-//                    for (int j = 1; j < tripsInfoString[i].length; j = j+2){
-//                        LatLng latLng = new LatLng(Double.parseDouble(tripsInfoString[i][j]),Double.parseDouble(tripsInfoString[i][j+1]));
-//                        t.route.add(latLng);
-//                    }
-//                    trips.add(t);
-//                }
-//
-//                inputStreamReader.close();
-//            }
-//        }catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
         SharedPreferences appSharedPrefs = PreferenceManager .getDefaultSharedPreferences(getApplicationContext());
         Gson gson = new Gson();
         String json = appSharedPrefs.getString("trips", "");
