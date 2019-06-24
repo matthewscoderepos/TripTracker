@@ -112,8 +112,7 @@ public class TripManager extends AppCompatActivity {
                         dialog.cancel();
                         Toast.makeText(TripManager.this, t.name + " added to the map.",
                                 Toast.LENGTH_LONG).show();
-
-                        onBackPressed();
+                        btn.setText(String.format("%s\t(Displayed)", t.name));
                     }
                 });
 

@@ -324,9 +324,7 @@ public class GoogleMapsActivity extends AppCompatActivity
         tripManager.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent myIntent = new Intent(GoogleMapsActivity.this,
-                        TripManager.class);
-                startActivity(myIntent);
+                Intent myIntent = new Intent(GoogleMapsActivity.this, TripManager.class);
                 startActivityForResult(myIntent, PICK_TRIP_REQUEST);
 
             }
@@ -584,25 +582,23 @@ public class GoogleMapsActivity extends AppCompatActivity
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        // If request is cancelled, the result arrays are empty.
+        if (requestCode == MY_PERMISSIONS_REQUEST_LOCATION) {
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    // permission was granted, yay! Do the
-                    // location-related task you need to do.
-                    if (ContextCompat.checkSelfPermission(this,
-                            Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PackageManager.PERMISSION_GRANTED) {
+                // permission was granted, yay! Do the
+                // location-related task you need to do.
+                if (ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED) {
 
-                        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-                        mGoogleMap.setMyLocationEnabled(true);
-                    }
-
-                } else {
-                    Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show();
+                    mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+                    mGoogleMap.setMyLocationEnabled(true);
                 }
+
+            } else {
+                Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show();
             }
         }
     }
