@@ -24,6 +24,12 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -41,12 +47,17 @@ import com.google.gson.Gson;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -91,18 +102,10 @@ public class GoogleMapsActivity extends AppCompatActivity
 
                 //If there is a new location
                 if (locationList.size() > 0) {
-
-                    //Debug, shows the size of the list that is returned
-
+                
                     //The last location in the list is the newest
                     Location location = locationList.get(locationList.size() - 1);
                     mLastLocation = location;
-
-//                //We could remove the markers, or set this if statement to a variable depending on if we are in a trip or not.
-//                //This statement will remove the last marker that was placed
-//                if (mCurrLocationMarker != null) {
-//                    mCurrLocationMarker.remove();
-//                }
 
                     //Getting the LatLng from the location
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
@@ -121,7 +124,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                         markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));  //THIS LINE CHANGES THE MARKER TO THE DOT YOU SEE. ANY IMAGE CAN BE USED
                         mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
                     }
-                    //move map camera , 18 is the zoom I am using. Smaller = further away.
+                    //move map camera , 16 is the zoom I am using. Smaller = further away.
                     if (autoMoveCamera)
                         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                 }
@@ -149,7 +152,8 @@ public class GoogleMapsActivity extends AppCompatActivity
         final Button tripManager = this.findViewById(R.id.tripsButton);
         final Button waypointManager = this.findViewById(R.id.waypointsButton);
         final Button reCenter = this.findViewById(R.id.reCenterButton);
-
+        Button WButton = this.findViewById(R.id.weatherButton);
+        
         reCenter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -160,6 +164,10 @@ public class GoogleMapsActivity extends AppCompatActivity
                 reCenter.setVisibility(View.GONE);
             }
         });
+
+
+
+        GetWeather();
 
         menu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -333,7 +341,43 @@ public class GoogleMapsActivity extends AppCompatActivity
                 advancedWeather(view);
             }
         });
+    }
 
+    private void GetWeather() {
+        System.out.println("Entering Get Weather");
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
+        final Button WButton = this.findViewById(R.id.weatherButton);
+        WButton.setText("working");
+        JsonObjectRequest jor = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response){
+                try {
+                    JSONObject main_object = response.getJSONObject("main");
+                    JSONArray array = response.getJSONArray("weather");
+                    JSONObject object = array.getJSONObject(0);
+                    String temp = String.valueOf(main_object.getDouble("temp"));
+                    //String description = object.getString("description");
+                    //String city = response.getString("name");
+
+                    WButton.setText(temp);
+
+                    //Calendar calendar = Calendar.getInstance();
+                    //SimpleDateFormat sdf = new SimpleDateFormat("EEEE-MM-dd");
+                    //String formattedDate = sdf.format(calendar.getTime());
+
+
+                }catch (JSONException e){
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener(){
+            @Override
+            public void onErrorResponse(VolleyError error){
+
+            }
+        });
+        RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(jor);
     }
 
     private void advancedWeather(View view) {
@@ -398,27 +442,6 @@ public class GoogleMapsActivity extends AppCompatActivity
     }
 
     public void WriteTrips() {
-//        //writes a comma seperated list of latlngs for the trip then a # character to show the end of the trip
-//        try {
-//            String delim = "#";
-//            File path = getFilesDir();
-//            File file = new File(path, "tripList.txt");
-//            try (FileOutputStream stream = new FileOutputStream(file,true)) {
-//                for (Trip t : trips) {
-//                    String info = t.name + ",";
-//                    stream.write(info.getBytes());
-//                    for (int i = 0; i < t.lat.size(); i++) {
-//                        info = t.lat.get(i) + "," + t.lng.get(i) + ",";
-//                        stream.write(info.getBytes());
-//                    }
-//                    stream.write(delim.getBytes());
-//                    Log.i("@@@", "Writing File - trips");
-//                }
-//            }
-//        }
-//        catch (IOException e) {
-//            Log.e("Exception", "File write failed: " + e.toString());
-//        }
         SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
         Gson gson = new Gson();
