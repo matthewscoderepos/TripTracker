@@ -23,4 +23,9 @@
     <string name="show">Show</string>
     <string name="nameoftrip">NameOfTrip</string>
 
+    <string name="enter_latitude">Enter Latitude:</string>
+    <string name="enter_longitude">Enter Longitude:</string>
+    <string name="manual_note">NOTE: to create a waypoint at your current location, please return to the
+        map and use Menu -> Add new Waypoint</string>
+    <string name="re_center">Re-Center</string>
 </resources>

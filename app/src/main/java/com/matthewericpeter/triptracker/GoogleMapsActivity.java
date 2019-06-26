@@ -38,6 +38,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.gson.Gson;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,7 +54,8 @@ import java.util.List;
 
 
 public class GoogleMapsActivity extends AppCompatActivity
-        implements OnMapReadyCallback, GoogleMap.OnCameraMoveListener {
+        implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener
+        {
     //code 97 is Pick a trip from the trip manager
     static final int PICK_TRIP_REQUEST = 97;
     //code 98 is Pick waypoints from waypoint manager
@@ -75,6 +78,8 @@ public class GoogleMapsActivity extends AppCompatActivity
     String tripName = "";
     //This location callback is the gravy of the app, it gets the location and adds markers to the map
     LocationCallback mLocationCallback = getmLocationCallback();
+    DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference();
+    DatabaseReference wayRef = rootRef.child("Waypoints");
 
     public LocationCallback getmLocationCallback() {
         LocationCallback mLocationCallback = new LocationCallback() {
@@ -137,36 +142,24 @@ public class GoogleMapsActivity extends AppCompatActivity
         mapFrag.getMapAsync(this);
 
 
-        // THIS CODE BLOCK PUTS THE "CENTER" BUTTON ON THE BOTTOM RIGHT
-        View mapView = mapFrag.getView();
-        if (mapView != null &&
-                mapView.findViewById(Integer.parseInt("1")) != null) {
-            // Get the button view
-            View locationButton = ((View) mapView.findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("2"));
-            // and next place it, on bottom right (as Google Maps app)
-            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)
-                    locationButton.getLayoutParams();
-            // position on right bottom
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
-            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
-            layoutParams.setMargins(0, 0, 30, 30);
-            locationButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    autoMoveCamera = true;
-                    mLocationCallback = getmLocationCallback();
-                }
-
-            });
-        }
-
-
         //Getting Buttons
         final Button menu = this.findViewById(R.id.menuButton);
         final Button addWaypoint = this.findViewById(R.id.addWayButton);
         final Button startTrip = this.findViewById(R.id.startButton);
         final Button tripManager = this.findViewById(R.id.tripsButton);
         final Button waypointManager = this.findViewById(R.id.waypointsButton);
+        final Button reCenter = this.findViewById(R.id.reCenterButton);
+
+        reCenter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LatLng latLng = new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude());
+                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                autoMoveCamera = true;
+                mLocationCallback = getmLocationCallback();
+                reCenter.setVisibility(View.GONE);
+            }
+        });
 
         menu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -210,9 +203,6 @@ public class GoogleMapsActivity extends AppCompatActivity
                     public void onClick(View v) {
                         //When ok is clicked make a waypoint with the last location and given name, add it to the list of waypoints
                         Waypoint w = new Waypoint(name.getText().toString(), mLastLocation.getLatitude(), mLastLocation.getLongitude());
-                        localWaypoints.add(w);
-                        displayWaypoints.add(w);
-                            WriteWaypoints(w);
 
                         //This is debug stuff, still useful for the user to see that it was added though
                         Toast.makeText(GoogleMapsActivity.this, "Added this location as a waypoint", Toast.LENGTH_LONG).show();
@@ -226,6 +216,12 @@ public class GoogleMapsActivity extends AppCompatActivity
 
                         if (publicBox.isChecked()) {
                             //ADD TO THE PUBLIC WAYPOINT TABLE HERE.
+                            wayRef.push().setValue(w);
+                        }
+                        else{
+                            localWaypoints.add(w);
+                            displayWaypoints.add(w);
+                            WriteWaypoints(w);
                         }
                         AddWaypoints();
                         //close the dialog box
@@ -315,7 +311,7 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
-                intent.putExtra("LIST", (Serializable) localWaypoints);
+                intent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
                 intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
                 startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
             }
@@ -499,6 +495,16 @@ public class GoogleMapsActivity extends AppCompatActivity
         }
     }
 
+
+    public void onCameraMoveStarted(int reason) {
+        if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+            Button reCenter = this.findViewById(R.id.reCenterButton);
+            autoMoveCamera = false;
+            mLocationCallback = getmLocationCallback();
+            reCenter.setVisibility(View.VISIBLE);
+        }
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
@@ -507,9 +513,10 @@ public class GoogleMapsActivity extends AppCompatActivity
         mLocationRequest.setInterval(1000);
         mLocationRequest.setFastestInterval(1000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        mGoogleMap.getUiSettings().setMyLocationButtonEnabled(true);
+        mGoogleMap.getUiSettings().setMyLocationButtonEnabled(false);
         mGoogleMap.getUiSettings().setCompassEnabled(true);
-        mGoogleMap.setOnCameraMoveListener(this);
+        mGoogleMap.setOnCameraMoveStartedListener(this);
+
 
         //read from file and add all of the waypoints in the waypoint list
         ReadWaypoints();
@@ -532,13 +539,6 @@ public class GoogleMapsActivity extends AppCompatActivity
             mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
             mGoogleMap.setMyLocationEnabled(true);
         }
-    }
-
-
-    //testing this
-    public void onCameraMove() {
-        autoMoveCamera = false;
-        mLocationCallback = getmLocationCallback();
     }
 
     //Android apps are an absolute COW when dealing with permissions. If you dont ask they crash, if you ask and they user says no, they crash unless you deal with it,
@@ -608,7 +608,8 @@ public class GoogleMapsActivity extends AppCompatActivity
         if(requestCode == PICK_WAYPOINTS_REQUEST){
             if (resultCode == RESULT_OK){
                 //waypointManager sent back a list of waypoints.. load them
-                displayWaypoints = (List<Waypoint>) data.getSerializableExtra("LIST");
+                displayWaypoints = (List<Waypoint>) data.getSerializableExtra("DISPLAY_LIST");
+                localWaypoints = (List<Waypoint>) data.getSerializableExtra("LOCAL_LIST");
                 if (displayWaypoints != null) {
                     AddWaypoints();
                 }
@@ -654,6 +655,7 @@ public class GoogleMapsActivity extends AppCompatActivity
             }
         }
     }
+
 }
 
 
