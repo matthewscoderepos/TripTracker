@@ -102,11 +102,10 @@ public class GoogleMapsActivity extends AppCompatActivity
 
                 //If there is a new location
                 if (locationList.size() > 0) {
-                
+                    final Button weatherButton = findViewById(R.id.weatherButton);
                     //The last location in the list is the newest
                     Location location = locationList.get(locationList.size() - 1);
                     mLastLocation = location;
-
                     //Getting the LatLng from the location
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
@@ -127,6 +126,9 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //move map camera , 16 is the zoom I am using. Smaller = further away.
                     if (autoMoveCamera)
                         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                    if (weatherButton.getText().equals(" ")){
+                        GetWeather();
+                    }
                 }
             }
         };
@@ -167,7 +169,6 @@ public class GoogleMapsActivity extends AppCompatActivity
 
 
 
-        GetWeather();
 
         menu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -345,9 +346,8 @@ public class GoogleMapsActivity extends AppCompatActivity
 
     private void GetWeather() {
         System.out.println("Entering Get Weather");
-        String url = "https://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + mLastLocation.getLatitude() + "&lon=" + mLastLocation.getLongitude() + "&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
         final Button WButton = this.findViewById(R.id.weatherButton);
-        WButton.setText("working");
         JsonObjectRequest jor = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response){
@@ -359,7 +359,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //String description = object.getString("description");
                     //String city = response.getString("name");
 
-                    WButton.setText(temp);
+                    WButton.setText(temp + "°");
 
                     //Calendar calendar = Calendar.getInstance();
                     //SimpleDateFormat sdf = new SimpleDateFormat("EEEE-MM-dd");
@@ -540,7 +540,6 @@ public class GoogleMapsActivity extends AppCompatActivity
         mGoogleMap.getUiSettings().setCompassEnabled(true);
         mGoogleMap.setOnCameraMoveStartedListener(this);
 
-
         //read from file and add all of the waypoints in the waypoint list
         ReadWaypoints();
         AddWaypoints();
@@ -649,7 +648,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                         Toast.LENGTH_LONG).show();
             }
         }
-        /*TODO: set up tripManager result handler.
+        /*
         PICK_TRIP_REQUEST code is defined up top as 97, this will be returned from the activity
         startActivityForResult call is in the tripManager Click Listener (line310), uncomment when ready
         to return result code see: WaypointActivity.java (lines:110-113)
