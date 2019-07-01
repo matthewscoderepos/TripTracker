@@ -304,6 +304,9 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
                 intent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
                 intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
+                intent.putExtra("CURRENT_LAT", mLastLocation.getLatitude());
+                intent.putExtra("CURRENT_LNG", mLastLocation.getLongitude());
+
                 startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
             }
         });

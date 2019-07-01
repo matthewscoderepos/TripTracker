@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/deleteWaypointText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:text="@string/delete_waypoint_confirm"
+        android:layout_marginStart="100dp"/>
+
+    <TextView
+        android:id="@+id/waypointNameView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/okButton"
+        android:layout_marginStart="100dp"/>
+
+    <TextView
+        android:id="@+id/waypointLatView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="100dp"
+        android:text="@string/lat_display" />
+
+    <TextView
+        android:id="@+id/waypointLongView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="100dp"
+        android:text="@string/lng_display" />
+    <TextView
+        android:id="@+id/confirmText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="160dp"
+        android:text="@string/confirm" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/yesBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="100dp"
+            android:text="@string/yes_caps" />
+
+        <Button
+            android:id="@+id/noBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/no_caps" />
+
+    </LinearLayout>
+
+
+</LinearLayout>
