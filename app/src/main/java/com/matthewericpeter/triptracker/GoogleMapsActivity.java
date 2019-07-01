@@ -46,6 +46,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.matthewericpeter.triptracker.Model.Clouds;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -375,6 +376,10 @@ public class GoogleMapsActivity extends AppCompatActivity
 
     private void advancedWeather(View view) {
         Intent intent = new Intent(this, WeatherActivity.class);
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + mLastLocation.getLatitude() + "&lon=" + mLastLocation.getLongitude() + "&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
+        Bundle bundle = new Bundle();
+        bundle.putString("WeatherURL", url);
+        intent.putExtras(bundle);
         startActivity(intent);
     }
 
