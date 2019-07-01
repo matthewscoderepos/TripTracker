@@ -301,13 +301,15 @@ public class GoogleMapsActivity extends AppCompatActivity
         waypointManager.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
-                intent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
-                intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
-                intent.putExtra("CURRENT_LAT", mLastLocation.getLatitude());
-                intent.putExtra("CURRENT_LNG", mLastLocation.getLongitude());
+                if(mLastLocation != null) {
+                    Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
+                    intent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
+                    intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
+                    intent.putExtra("CURRENT_LAT", mLastLocation.getLatitude());
+                    intent.putExtra("CURRENT_LNG", mLastLocation.getLongitude());
 
-                startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
+                    startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
+                }
             }
         });
 
