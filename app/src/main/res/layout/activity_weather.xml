@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     tools:context=".WeatherActivity"
     android:id="@+id/weatherMenu"
-    android:background="#FF0099CC"
     >
 
 
@@ -18,7 +17,6 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="#FFFFFF"
         />
 
     <TextView
@@ -29,7 +27,6 @@
         android:layout_centerHorizontal="true"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:textSize="13sp"
-        android:textColor="#FFFFFF"
         />
 
     <TextView
@@ -40,7 +37,6 @@
         android:layout_centerHorizontal="true"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textSize="70sp"
-        android:textColor="#FFFFFF"
         />
 
     <TextView
@@ -51,8 +47,6 @@
         android:layout_centerHorizontal="true"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:textSize="40sp"
-        android:textColor="#FFFFFF"
-
         />
 
     <TextView
@@ -62,7 +56,6 @@
         android:layout_below="@+id/weather_icon"
         android:layout_centerHorizontal="true"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textColor="#FFFFFF"
         />
 
 </RelativeLayout>

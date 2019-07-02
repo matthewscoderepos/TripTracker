@@ -354,8 +354,6 @@ public class GoogleMapsActivity extends AppCompatActivity
                     JSONArray array = response.getJSONArray("weather");
                     JSONObject object = array.getJSONObject(0);
                     String temp = String.valueOf(main_object.getDouble("temp"));
-                    //String description = object.getString("description");
-                    //String city = response.getString("name");
 
                     WButton.setText(String.format("%s°F", temp));
 
