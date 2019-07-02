@@ -1,11 +1,11 @@
 package com.matthewericpeter.triptracker;
 
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.widget.Button;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -29,16 +29,19 @@ import java.util.Calendar;
 public class WeatherActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private ViewPager viewPager;
-
     private CoordinatorLayout coordinatorLayout;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationCallback locationCallback;
     private LocationRequest locationRequest;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weather);
+        Typeface weatherFont = Typeface.createFromAsset(getAssets(), "weather.ttf");
+        TextView weatherIcon = findViewById(R.id.weather_icon);
+        weatherIcon.setTypeface(weatherFont);
 
         Bundle b = getIntent().getExtras();
         String url = b.getString("WeatherURL");
@@ -59,14 +62,19 @@ public class WeatherActivity extends AppCompatActivity {
                     String temp = String.valueOf(main_object.getDouble("temp"));
                     String description = object.getString("description");
                     String city = response.getString("name");
+                    int iconID = object.getInt("id");
 
                     TextView cityField = findViewById(R.id.city_field);
                     TextView updatedField = findViewById(R.id.updated_field);
                     TextView detailsField = findViewById(R.id.details_field);
                     TextView temperatureField = findViewById(R.id.current_temperature_field);
-                    //TextView WeatherIcon = findViewById(R.id.weather_icon);
+                    //TextView weatherIcon = findViewById(R.id.weather_icon);
 
-                    temperatureField.setText(temp);
+                    //weatherIcon.setText(iconID);
+                    //Picasso.with(this).load("http://openweathermap.org/img/w/" + iconID + ".png").into(weatherIcon);
+                    setWeatherIcon(iconID);
+
+                    temperatureField.setText(String.format("%s°F", temp));
                     detailsField.setText(description);
                     cityField.setText(city);
 
@@ -90,6 +98,41 @@ public class WeatherActivity extends AppCompatActivity {
         });
         RequestQueue queue = Volley.newRequestQueue(this);
         queue.add(jor);
+    }
+
+    private void setWeatherIcon(int iconID) {
+        //ImageView weatherIcon = findViewById(R.id.weather_icon);
+        //Picasso.with(this).load("http://openweathermap.org/img/w/" + iconID + ".png").into(weatherIcon);
+        String icon = "";
+        int ID = iconID / 100;
+
+        if(iconID == 800){
+            icon = getString(R.string.weather_sunny);
+        }
+        else{
+            switch(ID){
+                case 2 :
+                    icon = getString(R.string.weather_thunder);
+                    break;
+                case 3:
+                    icon = getString(R.string.weather_drizzle);
+                    break;
+                case 7 :
+                    icon = getString(R.string.weather_foggy);
+                    break;
+                case 8 :
+                    icon = getString(R.string.weather_cloudy);
+                    break;
+                case 6 :
+                    icon = getString(R.string.weather_snowy);
+                    break;
+                case 5 :
+                    icon = getString(R.string.weather_rainy);
+                    break;
+            }
+        }
+        TextView weatherIcon = findViewById(R.id.weather_icon);
+        weatherIcon.setText(icon);
     }
 
 }

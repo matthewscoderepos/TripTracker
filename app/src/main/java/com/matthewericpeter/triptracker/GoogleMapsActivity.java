@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -46,7 +47,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.matthewericpeter.triptracker.Model.Clouds;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -342,6 +342,10 @@ public class GoogleMapsActivity extends AppCompatActivity
     private void GetWeather() {
         String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + mLastLocation.getLatitude() + "&lon=" + mLastLocation.getLongitude() + "&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
         final Button WButton = this.findViewById(R.id.weatherButton);
+        final Button SButton = this.findViewById(R.id.sunButton);
+        Typeface weatherFont = Typeface.createFromAsset(getAssets(), "weather.ttf");
+        SButton.setTypeface(weatherFont);
+
         JsonObjectRequest jor = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -353,11 +357,10 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //String description = object.getString("description");
                     //String city = response.getString("name");
 
-                    WButton.setText(String.format("%s°", temp));
+                    WButton.setText(String.format("%s°F", temp));
 
-                    //Calendar calendar = Calendar.getInstance();
-                    //SimpleDateFormat sdf = new SimpleDateFormat("EEEE-MM-dd");
-                    //String formattedDate = sdf.format(calendar.getTime());
+                    int iconID = object.getInt("id");
+                    setWeatherIcon(iconID);
 
 
                 } catch (JSONException e) {
@@ -381,6 +384,39 @@ public class GoogleMapsActivity extends AppCompatActivity
         bundle.putString("WeatherURL", url);
         intent.putExtras(bundle);
         startActivity(intent);
+    }
+
+    private void setWeatherIcon(int iconID){
+        String icon = "";
+        int ID = iconID / 100;
+
+        if(iconID == 800){
+            icon = getString(R.string.weather_sunny);
+        }
+        else{
+            switch(ID){
+                case 2 :
+                    icon = getString(R.string.weather_thunder);
+                    break;
+                case 3:
+                    icon = getString(R.string.weather_drizzle);
+                    break;
+                case 7 :
+                    icon = getString(R.string.weather_foggy);
+                    break;
+                case 8 :
+                    icon = getString(R.string.weather_cloudy);
+                    break;
+                case 6 :
+                    icon = getString(R.string.weather_snowy);
+                    break;
+                case 5 :
+                    icon = getString(R.string.weather_rainy);
+                    break;
+            }
+        }
+        Button sunIcon = findViewById(R.id.sunButton);
+        sunIcon.setText(icon);
     }
 
     public void AddWaypoints() {
