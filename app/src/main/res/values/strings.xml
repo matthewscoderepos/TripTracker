@@ -6,6 +6,7 @@
     <string name="menu" translatable="false">Menu</string>
     <string name="sun_info">Sun Info</string>
     <string name="start_trip">Start Trip</string>
+    <string name="start_trip_button">Start Trip</string>
     <string name="trip_manager">Trip Manager</string>
     <string name="add_waypoint">Add Waypoint</string>
     <string name="waypoint_manager">Waypoint Manager</string>
@@ -41,4 +42,16 @@
     <string name="manual_note">NOTE: to create a waypoint at your current location, please return to the
         map and use Menu -> Add new Waypoint</string>
     <string name="re_center">Re-Center</string>
+    <string name="menu_close">Close</string>
+    <string name="menu_menu">Menu</string>
+    <string name="end_trip">End Trip</string>
+
+    <string name="weather_sunny">&#xf00d;</string>
+    <string name="weather_clear_night">&#xf02e;</string>
+    <string name="weather_foggy">&#xf014;</string>
+    <string name="weather_cloudy">&#xf013;</string>
+    <string name="weather_rainy">&#xf019;</string>
+    <string name="weather_snowy">&#xf01b;</string>
+    <string name="weather_thunder">&#xf01e;</string>
+    <string name="weather_drizzle">&#xf01c;</string>
 </resources>

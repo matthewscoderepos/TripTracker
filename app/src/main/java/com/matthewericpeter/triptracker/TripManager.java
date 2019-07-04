@@ -25,6 +25,7 @@ import java.util.List;
 public class TripManager extends AppCompatActivity {
     List<Trip> trips = new ArrayList<>();
     Trip tripToSend = new Trip();
+    boolean type;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,14 +37,14 @@ public class TripManager extends AppCompatActivity {
                 addTripButton(trips.get(count));
             }
         }
-
-
-
     }
 
     @Override public void onBackPressed(){
         Intent returnIntent = new Intent();
-        returnIntent.putExtra("TRIP", (Serializable) tripToSend);
+        if (tripToSend.endTime != null) {
+            returnIntent.putExtra("TRIP", (Serializable) tripToSend);
+            returnIntent.putExtra("TYPE", type);
+        }
         setResult(Activity.RESULT_OK, returnIntent);
         finish();
     }
@@ -56,13 +57,12 @@ public class TripManager extends AppCompatActivity {
         //create button
         final Button btn = new Button(this);
 
-        //give the button the waypoint as a tag*might not be necessary?*
-        btn.setTag(t); //TODO:remove tag if we can just send waypoint object
+        //give the button the waypoint as a tag
+        btn.setTag(t);
 
         //text for waypoint, should show its actual name
         btn.setText(t.name);
         btn.setLayoutParams(params);
-        final String btnText = String.valueOf(t.lat.get(0));
         //add button to linear layout
         ll.addView(btn);
 
@@ -92,16 +92,16 @@ public class TripManager extends AppCompatActivity {
                 endTime.setText(String.valueOf(t.endTime));
 
                 float[] results = new float[5];
-                float distanceTraveled = 0;
-                long timeElapsed = (t.endTime.getTime() - t.startTime.getTime())/(1000*60); //time in hours= / 3600000
+                double distanceTraveled = 0;
+                long timeElapsed = (t.endTime.getTime() - t.startTime.getTime());
                 for (int i = 0; i<t.lat.size()-1;i++) {
                     Location.distanceBetween(t.lat.get(i),t.lng.get(i),t.lat.get(i+1),t.lng.get(i+1),results);
                     distanceTraveled += results[0];
                 }
                 distanceText.setText(String.format("%s meters", String.valueOf(distanceTraveled)));
-                distanceTraveled = distanceTraveled; //distance in kilometers = /1000
-                float speed = distanceTraveled/timeElapsed;
-                speedText.setText(String.format("%.9f meters/minute \n(could be mph or knots/h)", speed));
+                double speed = distanceTraveled/timeElapsed;
+                speed = speed*2236.936; //meters/millisecond -> mph conversion
+                speedText.setText(String.format("%.4s mph", speed));
 
 
                 Button showButton = dialogView.findViewById(R.id.showButton);
@@ -113,9 +113,22 @@ public class TripManager extends AppCompatActivity {
                         Toast.makeText(TripManager.this, t.name + " added to the map.",
                                 Toast.LENGTH_LONG).show();
                         btn.setText(String.format("%s\t(Displayed)", t.name));
+                        type = true;
                     }
                 });
 
+                Button deleteButton = dialogView.findViewById(R.id.deleteButton);
+                deleteButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        tripToSend = t;
+                        dialog.cancel();
+                        Toast.makeText(TripManager.this, t.name + " deleted",
+                                Toast.LENGTH_LONG).show();
+                        btn.setText(String.format("%s\t(Deleted)", t.name));
+                        type = false;
+                    }
+                });
 
                 dialog.show();
             }
@@ -128,7 +141,6 @@ public class TripManager extends AppCompatActivity {
         String json = appSharedPrefs.getString("trips", "");
         System.out.println(json);
         trips = gson.fromJson(json, new TypeToken<ArrayList<Trip>>(){}.getType());
-
     }
 
 }

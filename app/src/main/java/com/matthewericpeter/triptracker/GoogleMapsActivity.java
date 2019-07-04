@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,7 +21,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,9 +43,10 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.gson.Gson;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -57,7 +58,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -65,8 +65,7 @@ import java.util.List;
 
 
 public class GoogleMapsActivity extends AppCompatActivity
-        implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener
-        {
+        implements OnMapReadyCallback, GoogleMap.OnCameraMoveStartedListener {
     //code 97 is Pick a trip from the trip manager
     static final int PICK_TRIP_REQUEST = 97;
     //code 98 is Pick waypoints from waypoint manager
@@ -81,7 +80,6 @@ public class GoogleMapsActivity extends AppCompatActivity
     FusedLocationProviderClient mFusedLocationClient;
     //List<LatLng> trip = new ArrayList<>();
     List<Trip> trips = new ArrayList<>();
-    List<LatLng> trip = new ArrayList<>();
     List<Waypoint> localWaypoints = new ArrayList<>();
     List<Waypoint> displayWaypoints = new ArrayList<>();
     boolean inTrip = false;
@@ -93,7 +91,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     DatabaseReference wayRef = rootRef.child("Waypoints");
 
     public LocationCallback getmLocationCallback() {
-        LocationCallback mLocationCallback = new LocationCallback() {
+        return new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
 
@@ -102,17 +100,15 @@ public class GoogleMapsActivity extends AppCompatActivity
 
                 //If there is a new location
                 if (locationList.size() > 0) {
-                
+                    final Button weatherButton = findViewById(R.id.weatherButton);
                     //The last location in the list is the newest
                     Location location = locationList.get(locationList.size() - 1);
                     mLastLocation = location;
-
                     //Getting the LatLng from the location
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
                     if (inTrip) {
                         System.out.println(latLng.latitude + " " + latLng.longitude);
-                        System.out.println(trips.size());
                         System.out.println(trips.get(trips.size() - 1).name);
                         trips.get(trips.size() - 1).lat.add(latLng.latitude);
                         trips.get(trips.size() - 1).lng.add(latLng.longitude);
@@ -127,10 +123,12 @@ public class GoogleMapsActivity extends AppCompatActivity
                     //move map camera , 16 is the zoom I am using. Smaller = further away.
                     if (autoMoveCamera)
                         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                    if (weatherButton.getText().equals(" ")) {
+                        GetWeather();
+                    }
                 }
             }
         };
-        return mLocationCallback;
     }
 
     @Override
@@ -142,7 +140,9 @@ public class GoogleMapsActivity extends AppCompatActivity
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFrag.getMapAsync(this);
+        if (mapFrag != null) {
+            mapFrag.getMapAsync(this);
+        }
 
 
         //Getting Buttons
@@ -153,11 +153,11 @@ public class GoogleMapsActivity extends AppCompatActivity
         final Button waypointManager = this.findViewById(R.id.waypointsButton);
         final Button reCenter = this.findViewById(R.id.reCenterButton);
         Button WButton = this.findViewById(R.id.weatherButton);
-        
+
         reCenter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                LatLng latLng = new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude());
+                LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
                 mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                 autoMoveCamera = true;
                 mLocationCallback = getmLocationCallback();
@@ -166,21 +166,18 @@ public class GoogleMapsActivity extends AppCompatActivity
         });
 
 
-
-        GetWeather();
-
         menu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //when menu is clicked, display buttons. If clicked again, hide them
                 if (addWaypoint.getVisibility() == View.GONE) {
-                    menu.setText("Close");
+                    menu.setText(getString(R.string.menu_close));
                     addWaypoint.setVisibility(View.VISIBLE);
                     startTrip.setVisibility(View.VISIBLE);
                     tripManager.setVisibility(View.VISIBLE);
                     waypointManager.setVisibility(View.VISIBLE);
                 } else {
-                    menu.setText("Menu");
+                    menu.setText(getString(R.string.menu_menu));
                     addWaypoint.setVisibility(View.GONE);
                     startTrip.setVisibility(View.GONE);
                     tripManager.setVisibility(View.GONE);
@@ -225,8 +222,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                         if (publicBox.isChecked()) {
                             //ADD TO THE PUBLIC WAYPOINT TABLE HERE.
                             wayRef.push().setValue(w);
-                        }
-                        else{
+                        } else {
                             localWaypoints.add(w);
                             displayWaypoints.add(w);
                             WriteWaypoints(w);
@@ -268,7 +264,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                     trips.get(trips.size() - 1).endLng = mLastLocation.getLongitude();
 
                     inTrip = false;
-                    startTrip.setText("Start Trip");
+                    mLocationCallback = getmLocationCallback();
+                    startTrip.setText(getString(R.string.start_trip));
                     Toast.makeText(GoogleMapsActivity.this, tripName + " Ended", Toast.LENGTH_LONG).show();
                     Log.i("Trip Ended", name.getText().toString());
 
@@ -294,8 +291,9 @@ public class GoogleMapsActivity extends AppCompatActivity
                             if (!inTrip) {
                                 //When ok is clicked start the trip, change inTrip to true
                                 inTrip = true;
+                                mLocationCallback = getmLocationCallback();
                                 tripName = name.getText().toString();
-                                startTrip.setText("End Trip");
+                                startTrip.setText(getString(R.string.end_trip));
 
                                 Trip trip = new Trip();
                                 trip.name = tripName;
@@ -303,10 +301,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                                 trip.startLat = mLastLocation.getLatitude();
                                 trip.startLng = mLastLocation.getLongitude();
                                 trips.add(trip);
-                                System.out.println(trip.name);
                                 //This is debug stuff, still useful for the user to see that it was added though
                                 Toast.makeText(GoogleMapsActivity.this, name.getText().toString() + " Started", Toast.LENGTH_LONG).show();
-                                Log.i("Trip Started", name.getText().toString());
                                 dialog.cancel();
                             }
                         }
@@ -349,35 +345,34 @@ public class GoogleMapsActivity extends AppCompatActivity
     }
 
     private void GetWeather() {
-        System.out.println("Entering Get Weather");
-        String url = "https://api.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + mLastLocation.getLatitude() + "&lon=" + mLastLocation.getLongitude() + "&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
         final Button WButton = this.findViewById(R.id.weatherButton);
-        WButton.setText("working");
+        final Button SButton = this.findViewById(R.id.sunButton);
+        Typeface weatherFont = Typeface.createFromAsset(getAssets(), "weather.ttf");
+        SButton.setTypeface(weatherFont);
+
         JsonObjectRequest jor = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
-            public void onResponse(JSONObject response){
+            public void onResponse(JSONObject response) {
                 try {
                     JSONObject main_object = response.getJSONObject("main");
                     JSONArray array = response.getJSONArray("weather");
                     JSONObject object = array.getJSONObject(0);
                     String temp = String.valueOf(main_object.getDouble("temp"));
-                    //String description = object.getString("description");
-                    //String city = response.getString("name");
 
-                    WButton.setText(temp);
+                    WButton.setText(String.format("%s°F", temp));
 
-                    //Calendar calendar = Calendar.getInstance();
-                    //SimpleDateFormat sdf = new SimpleDateFormat("EEEE-MM-dd");
-                    //String formattedDate = sdf.format(calendar.getTime());
+                    int iconID = object.getInt("id");
+                    setWeatherIcon(iconID);
 
 
-                }catch (JSONException e){
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
-        }, new Response.ErrorListener(){
+        }, new Response.ErrorListener() {
             @Override
-            public void onErrorResponse(VolleyError error){
+            public void onErrorResponse(VolleyError error) {
 
             }
         });
@@ -387,13 +382,50 @@ public class GoogleMapsActivity extends AppCompatActivity
 
     private void advancedWeather(View view) {
         Intent intent = new Intent(this, WeatherActivity.class);
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + mLastLocation.getLatitude() + "&lon=" + mLastLocation.getLongitude() + "&appid=c4da64d57a1d34aca9cd2b60d7ee89a8&units=imperial";
+        Bundle bundle = new Bundle();
+        bundle.putString("WeatherURL", url);
+        intent.putExtras(bundle);
         startActivity(intent);
+    }
+
+    private void setWeatherIcon(int iconID){
+        String icon = "";
+        int ID = iconID / 100;
+
+        if(iconID == 800){
+            icon = getString(R.string.weather_sunny);
+        }
+        else{
+            switch(ID){
+                case 2 :
+                    icon = getString(R.string.weather_thunder);
+                    break;
+                case 3:
+                    icon = getString(R.string.weather_drizzle);
+                    break;
+                case 7 :
+                    icon = getString(R.string.weather_foggy);
+                    break;
+                case 8 :
+                    icon = getString(R.string.weather_cloudy);
+                    break;
+                case 6 :
+                    icon = getString(R.string.weather_snowy);
+                    break;
+                case 5 :
+                    icon = getString(R.string.weather_rainy);
+                    break;
+            }
+        }
+        Button sunIcon = findViewById(R.id.sunButton);
+        sunIcon.setText(icon);
     }
 
     public void AddWaypoints() {
         Log.i("@@@", "AddWaypoints Called");
         Log.i("@@@", Integer.toString(displayWaypoints.size()));
-        for(int i = 0; i < displayWaypoints.size(); i++){
+        for (int i = 0; i < displayWaypoints.size(); i++) {
             Waypoint w = displayWaypoints.get(i);
             MarkerOptions markerOptions = new MarkerOptions();
             LatLng latLng = new LatLng(w.latitude, w.longitude);
@@ -433,8 +465,8 @@ public class GoogleMapsActivity extends AppCompatActivity
                 ret = new String(buffer);
                 String[] info = ret.split(",");
                 Log.i("###", Integer.toString(info.length));
-                for(int i = 0;i<info.length;i = i+3) {
-                    Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i+1]), Double.parseDouble(info[i+2]));
+                for (int i = 0; i < info.length; i = i + 3) {
+                    Waypoint w = new Waypoint(info[i], Double.parseDouble(info[i + 1]), Double.parseDouble(info[i + 2]));
                     displayWaypoints.add(w);
                     localWaypoints.add(w);
                 }
@@ -450,9 +482,46 @@ public class GoogleMapsActivity extends AppCompatActivity
         SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
         Gson gson = new Gson();
-        String json = gson.toJson(trips); //tasks is an ArrayList instance variable
+        List<Trip> tripsToBeSaved = trips;
+
+
+        String savedJson = appSharedPrefs.getString("trips", "");
+        assert savedJson != null;
+        if (savedJson.length() != 0) {
+            List<Trip> savedTrips = gson.fromJson(savedJson, new TypeToken<ArrayList<Trip>>() {
+            }.getType());
+            tripsToBeSaved.addAll(savedTrips);
+        }
+        String json = gson.toJson(tripsToBeSaved); //tasks is an ArrayList instance variable
         prefsEditor.putString("trips", json);
         prefsEditor.commit();
+        tripsToBeSaved.clear();
+    }
+
+    public void DeleteTrip(Trip t) {
+        SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
+        Gson gson = new Gson();
+        List<Trip> totalTrips = trips;
+
+        String savedJson = appSharedPrefs.getString("trips", "");
+        assert savedJson != null;
+        if (savedJson.length() != 0) {
+            List<Trip> savedTrips = gson.fromJson(savedJson, new TypeToken<ArrayList<Trip>>() {
+            }.getType());
+            totalTrips.addAll(savedTrips);
+        }
+
+        for (Trip temp: trips){
+            if (temp.lat == t.lat)
+                trips.remove(temp);
+        }
+
+        totalTrips.remove(t);
+        String json = gson.toJson(totalTrips);
+        prefsEditor.putString("trips", json);
+        prefsEditor.commit();
+        totalTrips.clear();
     }
 
     @Override
@@ -545,7 +614,6 @@ public class GoogleMapsActivity extends AppCompatActivity
         mGoogleMap.getUiSettings().setCompassEnabled(true);
         mGoogleMap.setOnCameraMoveStartedListener(this);
 
-
         //read from file and add all of the waypoints in the waypoint list
         ReadWaypoints();
         AddWaypoints();
@@ -630,52 +698,58 @@ public class GoogleMapsActivity extends AppCompatActivity
             }
         }
     }
+
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         mGoogleMap.clear();
-        if(requestCode == PICK_WAYPOINTS_REQUEST){
-            if (resultCode == RESULT_OK){
+        if (requestCode == PICK_WAYPOINTS_REQUEST) {
+            if (resultCode == RESULT_OK) {
                 //waypointManager sent back a list of waypoints.. load them
                 displayWaypoints = (List<Waypoint>) data.getSerializableExtra("DISPLAY_LIST");
                 localWaypoints = (List<Waypoint>) data.getSerializableExtra("LOCAL_LIST");
                 if (displayWaypoints != null) {
                     AddWaypoints();
-                }
-                else {
+                } else {
                     //Some error handling for a problem i was having earlier.. probably not necessary anymore
                     Toast.makeText(GoogleMapsActivity.this, "Empty Waypoints recieved...",
                             Toast.LENGTH_LONG).show();
                 }
-            }
-            else {
+            } else {
                 //Error handling if the Waypoint manager doesn't close with a result
                 //This would likely be because the activity crashed somehow
                 Toast.makeText(GoogleMapsActivity.this, "Waypoints not recieved...",
                         Toast.LENGTH_LONG).show();
             }
         }
-        /*TODO: set up tripManager result handler.
+        /*
         PICK_TRIP_REQUEST code is defined up top as 97, this will be returned from the activity
         startActivityForResult call is in the tripManager Click Listener (line310), uncomment when ready
         to return result code see: WaypointActivity.java (lines:110-113)
         */
-        if(requestCode == PICK_TRIP_REQUEST){
-            if(resultCode == RESULT_OK){
+        if (requestCode == PICK_TRIP_REQUEST) {
+            if (resultCode == RESULT_OK) {
                 //trip manager returned with a trip, fetch and display
                 Trip t = (Trip) data.getSerializableExtra("TRIP");
-                for (int i = 0; i < t.lat.size(); i++){
-                    MarkerOptions markerOptions = new MarkerOptions();
-                    LatLng latLng = new LatLng(t.lat.get(i), t.lng.get(i));
-                    markerOptions.position(latLng);
-                    //markerOptions.title(t.name);
-                    markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));
-                    mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+                if (t != null) {
+                    boolean type = (boolean) data.getSerializableExtra("TYPE");
+                    if (type) {
+                        for (int i = 0; i < t.lat.size(); i++) {
+                            MarkerOptions markerOptions = new MarkerOptions();
+                            LatLng latLng = new LatLng(t.lat.get(i), t.lng.get(i));
+                            markerOptions.position(latLng);
+                            //markerOptions.title(t.name);
+                            markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));
+                            mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+                        }
+                        LatLng latLng = new LatLng(t.lat.get(0), t.lng.get(0));
+                        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                    } else {
+                        DeleteTrip(t);
+                        Toast.makeText(GoogleMapsActivity.this, "Trip Deleted",
+                                Toast.LENGTH_LONG).show();
+                    }
                 }
-                LatLng latLng = new LatLng(t.lat.get(0), t.lng.get(0));
-                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
-
-            }
-            else{
+            } else {
                 //Error handling if the trip manager doesn't close with a result
                 //This would likely be because the activity crashed somehow
                 Toast.makeText(GoogleMapsActivity.this, "Trip not recieved..",
