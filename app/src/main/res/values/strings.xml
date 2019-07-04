@@ -25,6 +25,19 @@
 
     <string name="enter_latitude">Enter Latitude:</string>
     <string name="enter_longitude">Enter Longitude:</string>
+    <string name="delete_waypoint_confirm">Deleting the waypoint: </string>
+    <string name="confirm">Confirm?</string>
+    <string name="name_display">Name: </string>
+    <string name="lat_display">Latitude: </string>
+    <string name="lng_display">Longitude: </string>
+    <string name="yes_caps">YES</string>
+    <string name="no_caps">NO</string>
+    <string name="edit_point">Edit Waypoint: </string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="make_public_box">Make Public</string>
+    <string name="publicNote">NOTE: once saved as public, a waypoint cannot be edited or deleted</string>
+    <string name="current_location_box">Use Current Location</string>
     <string name="manual_note">NOTE: to create a waypoint at your current location, please return to the
         map and use Menu -> Add new Waypoint</string>
     <string name="re_center">Re-Center</string>

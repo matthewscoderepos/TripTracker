@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:orientation="vertical"
     android:layout_height="match_parent">
@@ -39,12 +38,37 @@
         android:hint = "@string/enter_longitude"
         android:inputType="number|numberDecimal|numberSigned" />
 
+    <TextView
+        android:id="@+id/currentLat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="100dp"
+        android:ems="10"
+        android:text="@string/lat_display"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/currentLong"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="100dp"
+        android:ems="10"
+        android:text="@string/lng_display"
+        android:visibility="gone"/>
+
     <CheckBox
         android:id="@+id/publicBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="150dp"
         android:text="@string/publicBox" />
+
+    <CheckBox
+        android:id="@+id/currentLocationBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="150dp"
+        android:text="@string/current_location_box" />
 
     <Button
         android:id="@+id/okButton"
@@ -53,12 +77,4 @@
         android:layout_marginStart="150dp"
         android:text="@string/okButton" />
 
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:width="250dp"
-        android:gravity="center|center_horizontal"
-        android:text="@string/manual_note" />
 </LinearLayout>
