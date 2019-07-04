@@ -30,10 +30,14 @@ public class TripManager extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trip_manager);
+        Intent i = getIntent();
+        List<Trip> sentTrips = (List<Trip>) i.getSerializableExtra("TRIPS");
+        if (sentTrips != null)
+            trips.addAll(sentTrips);
         ReadTrips();
-
         if (trips != null) {
             for (int count = 0; count < trips.size(); count++) {
+                System.out.println("$$$$$$" + trips.get(count).name);
                 addTripButton(trips.get(count));
             }
         }
@@ -41,16 +45,24 @@ public class TripManager extends AppCompatActivity {
 
     @Override public void onBackPressed(){
         Intent returnIntent = new Intent();
-        if (tripToSend.endTime != null) {
-            returnIntent.putExtra("TRIP", (Serializable) tripToSend);
+        if (type) {
+            if (tripToSend.endTime != null) {
+                returnIntent.putExtra("TRIP", (Serializable) tripToSend);
+                returnIntent.putExtra("TYPE", type);
+                System.out.println("$$$$$$" + tripToSend.name);
+            }
+            setResult(Activity.RESULT_OK, returnIntent);
+            finish();
+        }else{
+            returnIntent.putExtra("TRIPS", (Serializable) trips);
             returnIntent.putExtra("TYPE", type);
+            setResult(Activity.RESULT_OK, returnIntent);
+            finish();
         }
-        setResult(Activity.RESULT_OK, returnIntent);
-        finish();
     }
 
     public void addTripButton(Trip t){
-        LinearLayout ll = findViewById(R.id.layout);
+        final LinearLayout ll = findViewById(R.id.layout);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -121,12 +133,11 @@ public class TripManager extends AppCompatActivity {
                 deleteButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        tripToSend = t;
+                        DeleteTrip(t);
                         dialog.cancel();
-                        Toast.makeText(TripManager.this, t.name + " deleted",
+                        ll.removeView(btn);
+                        Toast.makeText(TripManager.this, tripToSend.name + " deleted",
                                 Toast.LENGTH_LONG).show();
-                        btn.setText(String.format("%s\t(Deleted)", t.name));
-                        type = false;
                     }
                 });
 
@@ -140,7 +151,30 @@ public class TripManager extends AppCompatActivity {
         Gson gson = new Gson();
         String json = appSharedPrefs.getString("trips", "");
         System.out.println(json);
-        trips = gson.fromJson(json, new TypeToken<ArrayList<Trip>>(){}.getType());
+        List<Trip> saved = gson.fromJson(json, new TypeToken<ArrayList<Trip>>(){}.getType());
+        if (saved != null)
+            trips.addAll(saved);
+    }
+
+    public void DeleteTrip(Trip t) {
+        Gson gson = new Gson();
+        Trip removeThis = new Trip();
+        for (Trip temp: trips){
+            if (temp.lat == t.lat && temp.name.equals(t.name))
+                removeThis = temp;
+        }
+        trips.remove(removeThis);
+        String json = gson.toJson(trips);
+        WriteTrips();
+    }
+
+    public void WriteTrips() {
+        SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(trips);
+        prefsEditor.putString("trips", json);
+        prefsEditor.commit();
     }
 
 }

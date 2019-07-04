@@ -314,10 +314,15 @@ public class GoogleMapsActivity extends AppCompatActivity
         waypointManager.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
-                intent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
-                intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
-                startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
+                if(mLastLocation != null) {
+                    Intent intent = new Intent(GoogleMapsActivity.this, WaypointActivity.class);
+                    intent.putExtra("LOCAL_LIST", (Serializable) localWaypoints);
+                    intent.putExtra("DISPLAY_LIST", (Serializable) displayWaypoints);
+                    intent.putExtra("CURRENT_LAT", mLastLocation.getLatitude());
+                    intent.putExtra("CURRENT_LNG", mLastLocation.getLongitude());
+
+                    startActivityForResult(intent, PICK_WAYPOINTS_REQUEST);
+                }
             }
         });
 
@@ -325,8 +330,8 @@ public class GoogleMapsActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 Intent myIntent = new Intent(GoogleMapsActivity.this, TripManager.class);
+                myIntent.putExtra("TRIPS", (Serializable) trips);
                 startActivityForResult(myIntent, PICK_TRIP_REQUEST);
-
             }
         });
 
@@ -493,35 +498,10 @@ public class GoogleMapsActivity extends AppCompatActivity
         tripsToBeSaved.clear();
     }
 
-    public void DeleteTrip(Trip t) {
-        SharedPreferences appSharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
-        Gson gson = new Gson();
-        List<Trip> totalTrips = trips;
-
-        String savedJson = appSharedPrefs.getString("trips", "");
-        assert savedJson != null;
-        if (savedJson.length() != 0) {
-            List<Trip> savedTrips = gson.fromJson(savedJson, new TypeToken<ArrayList<Trip>>() {
-            }.getType());
-            totalTrips.addAll(savedTrips);
-        }
-
-        for (Trip temp: trips){
-            if (temp.lat == t.lat)
-                trips.remove(temp);
-        }
-
-        totalTrips.remove(t);
-        String json = gson.toJson(totalTrips);
-        prefsEditor.putString("trips", json);
-        prefsEditor.commit();
-        totalTrips.clear();
-    }
-
     @Override
     public void onPause() {
         super.onPause();
+
 
         //stop location updates when Activity is no longer active
         if (mFusedLocationClient != null) {
@@ -558,35 +538,54 @@ public class GoogleMapsActivity extends AppCompatActivity
         }
     }
 
+    //@Override
+    //public void onRestart() {
+//        super.onRestart();
+//
+//        mLocationCallback = getmLocationCallback();
+//
+//        if (mFusedLocationClient == null) {
+//            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                if (ContextCompat.checkSelfPermission(this,
+//                        Manifest.permission.ACCESS_FINE_LOCATION)
+//                        == PackageManager.PERMISSION_GRANTED) {
+//                    mLocationRequest = new LocationRequest();
+//                    mLocationRequest.setInterval(1000);
+//                    mLocationRequest.setFastestInterval(1000);
+//                    mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+//                    //Location Permission already granted
+//                    mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+//                    mGoogleMap.setMyLocationEnabled(true);
+//                } else {
+//                    //Request Location Permission
+//                    checkLocationPermission();
+//                }
+//            } else {
+//                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+//                mGoogleMap.setMyLocationEnabled(true);
+//            }
+//        }
+//    }
+
+
     @Override
-    public void onRestart() {
-        super.onRestart();
-
-        mLocationCallback = getmLocationCallback();
-
-        if (mFusedLocationClient == null) {
-            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ContextCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_FINE_LOCATION)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    mLocationRequest = new LocationRequest();
-                    mLocationRequest.setInterval(1000);
-                    mLocationRequest.setFastestInterval(1000);
-                    mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-                    //Location Permission already granted
-                    mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-                    mGoogleMap.setMyLocationEnabled(true);
-                } else {
-                    //Request Location Permission
-                    checkLocationPermission();
-                }
-            } else {
-                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-                mGoogleMap.setMyLocationEnabled(true);
-            }
-        }
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        // Save UI state changes to the savedInstanceState.
+        // This bundle will be passed to onCreate if the process is
+        // killed and restarted.
+        savedInstanceState.putBoolean("inTrip", inTrip);
+        savedInstanceState.putBoolean("autoMoveCamera", autoMoveCamera);
     }
 
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        // Restore UI state from the savedInstanceState.
+        // This bundle has also been passed to onCreate.
+        inTrip = savedInstanceState.getBoolean("inTrip");
+        autoMoveCamera = savedInstanceState.getBoolean("autoMoveCamera");
+    }
 
     public void onCameraMoveStarted(int reason) {
         if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
@@ -739,9 +738,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                         LatLng latLng = new LatLng(t.lat.get(0), t.lng.get(0));
                         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
                     } else {
-                        DeleteTrip(t);
-                        Toast.makeText(GoogleMapsActivity.this, "Trip Deleted",
-                                Toast.LENGTH_LONG).show();
+                        trips = (List<Trip>) data.getSerializableExtra("TRIPS");
                     }
                 }
             } else {
