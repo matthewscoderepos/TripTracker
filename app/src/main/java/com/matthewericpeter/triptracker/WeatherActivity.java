@@ -22,8 +22,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 
 public class WeatherActivity extends AppCompatActivity {
@@ -60,7 +63,6 @@ public class WeatherActivity extends AppCompatActivity {
                     JSONObject object = array.getJSONObject(0);
 
                     String temp = String.valueOf(main_object.getDouble("temp"));
-                    String description = object.getString("description");
                     String city = response.getString("name");
                     int iconID = object.getInt("id");
 
@@ -68,14 +70,18 @@ public class WeatherActivity extends AppCompatActivity {
                     TextView updatedField = findViewById(R.id.updated_field);
                     TextView detailsField = findViewById(R.id.details_field);
                     TextView temperatureField = findViewById(R.id.current_temperature_field);
-                    //TextView weatherIcon = findViewById(R.id.weather_icon);
 
-                    //weatherIcon.setText(iconID);
-                    //Picasso.with(this).load("http://openweathermap.org/img/w/" + iconID + ".png").into(weatherIcon);
                     setWeatherIcon(iconID);
 
+                    DateFormat df = DateFormat.getTimeInstance();
+                    String sRise = df.format(new Date(response.getJSONObject("sys").getLong("sunrise") * 1000));
+                    String sSet = df.format(new Date(response.getJSONObject("sys").getLong("sunset") * 1000));
+
                     temperatureField.setText(String.format("%s°F", temp));
-                    detailsField.setText(description);
+                    detailsField.setText(object.getString("description").toUpperCase(Locale.US) +
+                            "\n" + "Humidity: " + main_object.getString("humidity") + "%" +
+                            "\n" + "Pressure: " + main_object.getString("pressure") + " hPa" +
+                            "\n" + "Sunrise: " + sRise + "\n" + "Sunset: " + sSet);
                     cityField.setText(city);
 
                     Calendar calendar = Calendar.getInstance();
