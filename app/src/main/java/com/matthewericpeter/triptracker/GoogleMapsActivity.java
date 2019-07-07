@@ -84,6 +84,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
     Trip currentTrip = new Trip();
+    Trip t = new Trip();
     //List<LatLng> trip = new ArrayList<>();
     List<Trip> trips = new ArrayList<>();
     List<Waypoint> localWaypoints = new ArrayList<>();
@@ -779,6 +780,23 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Toast.makeText(GoogleMapsActivity.this, "Waypoints not recieved...",
                         Toast.LENGTH_LONG).show();
             }
+            if (t != null) {
+                try {
+                    Log.i("&&&", t.name);
+                    for (int i = 0; i < t.lat.size(); i++) {
+                        MarkerOptions markerOptions = new MarkerOptions();
+                        LatLng latLng = new LatLng(t.lat.get(i), t.lng.get(i));
+                        markerOptions.position(latLng);
+                        markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));
+                        mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+                    }
+                    LatLng latLng = new LatLng(t.lat.get(0), t.lng.get(0));
+                    mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                }
+                catch (IndexOutOfBoundsException e){
+                    Log.i("***", "onActivityResult: no Trip to display");
+                }
+            }
         }
         /*
         PICK_TRIP_REQUEST code is defined up top as 97, this will be returned from the activity
@@ -790,7 +808,7 @@ public class GoogleMapsActivity extends AppCompatActivity
             AddWaypoints();
             if (resultCode == RESULT_OK) {
                 //trip manager returned with a trip, fetch and display
-                Trip t = (Trip) data.getSerializableExtra("TRIP");
+                t = (Trip) data.getSerializableExtra("TRIP");
                 if (t != null) {
                     Log.i("&&&", t.name);
                     boolean type = (boolean) data.getSerializableExtra("TYPE");
@@ -814,6 +832,7 @@ public class GoogleMapsActivity extends AppCompatActivity
                 Toast.makeText(GoogleMapsActivity.this, "Trip not recieved..",
                         Toast.LENGTH_LONG).show();
             }
+
         }
     }
 
