@@ -22,15 +22,12 @@
         tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name=".WaypointActivity"
-            android:label="@string/title_activity_waypoint"
-            android:parentActivityName=".GoogleMapsActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.matthewericpeter.triptracker.GoogleMapsActivity" />
+            android:label="@string/title_activity_waypoint">
         </activity>
-        <activity android:name=".TripManager" />
-        <activity android:name=".WeatherActivity" />
+        <activity android:name=".TripManager"
+            android:label="@string/title_activity_trip"/>
+        <activity android:name=".WeatherActivity"
+            android:label="@string/title_activity_weather"/>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
