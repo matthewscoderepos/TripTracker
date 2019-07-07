@@ -3,10 +3,8 @@ package com.matthewericpeter.triptracker;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -21,14 +19,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,8 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.concurrent.CountDownLatch;
 
 public class WaypointActivity extends AppCompatActivity {
     //Get Database reference for "Waypoints" (list of all waypoints)
@@ -150,7 +144,7 @@ public class WaypointActivity extends AppCompatActivity {
                                 localWaypoints.add(w);
                                 displayWaypoints.add(w);
                                 WriteWaypoints(w);
-                                addWaypointButton(w);
+                                addLocalWaypointButtons(w);
                             }
                             //close the dialog box
                             dialog.cancel();
@@ -176,22 +170,8 @@ public class WaypointActivity extends AppCompatActivity {
                         Toast.LENGTH_LONG).show();
             }
         });
-        //Create a banner to separate local waypoints
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT);
-        final LinearLayout mainLayout = findViewById(R.id.layout);
-        final TextView localPts = new TextView(this);
-        String localTxt = "Local Waypoints:";
-        localPts.setText(localTxt);
-        localPts.setLayoutParams(params);
-        localPts.setTextSize(25);
-        mainLayout.addView(localPts);
 
         sortLocalWaypoints();
-        for (Waypoint temp : localWaypoints) {
-            addLocalWaypointButtons(temp);
-        }
     }
 
     @Override public void onBackPressed(){
@@ -208,13 +188,13 @@ public class WaypointActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT);
 
-        LinearLayout mainLayout = findViewById(R.id.layout);
+        LinearLayout publicLayout = findViewById(R.id.publicLayout);
 
         //create & add button
         final Button btn = new Button(this);
         btn.setTag(w);
         btn.setLayoutParams(params);
-        mainLayout.addView(btn);
+        publicLayout.addView(btn);
 
         //Check if waypoint is on the Display list, mark the button if so
         if (waypointDisplayed(w) != null) {
@@ -260,9 +240,9 @@ public class WaypointActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 0f);
 
-        //Create childLayout (to hold horizontal buttons) and get mainLayout (to hold list of all buttons)
+        //Create childLayout (to hold horizontal buttons) and get localLayout (to hold list of all local buttons)
         final LinearLayout childLayout = new LinearLayout(this);
-        final LinearLayout mainLayout = findViewById(R.id.layout);
+        final LinearLayout localLayout = findViewById(R.id.localLayout);
 
         childLayout.setLayoutParams(params);
         childLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -288,7 +268,7 @@ public class WaypointActivity extends AppCompatActivity {
         childLayout.addView(btn);
         childLayout.addView(delBtn);
         childLayout.addView(editBtn);
-        mainLayout.addView(childLayout);
+        localLayout.addView(childLayout);
 
         //Check if waypoint is on the Display list, mark the button if so
         if (waypointDisplayed(w) != null) {
@@ -386,7 +366,7 @@ public class WaypointActivity extends AppCompatActivity {
                             if (makePublicBox.isChecked()) {
                                 //Add to the Database and remove from local waypoints
                                 deleteWaypoint(w);
-                                mainLayout.removeView(childLayout);
+                                localLayout.removeView(childLayout);
 
                                 wayRef.push().setValue(w);
                             }
@@ -439,7 +419,7 @@ public class WaypointActivity extends AppCompatActivity {
                         deleteWaypoint(w);
                         Toast.makeText(v.getContext(),"Deleted waypoint: " + w.name,
                                 Toast.LENGTH_LONG).show();
-                        mainLayout.removeView(childLayout);
+                        localLayout.removeView(childLayout);
                         dialog.cancel();
                     }
                 });
@@ -553,38 +533,23 @@ public class WaypointActivity extends AppCompatActivity {
         catch (IOException e) {
             Log.e("Exception", "File write failed: " + e.toString());
         }
-
     }
     public void sortLocalWaypoints(){
         List<WaypointAndDistance> localDistances = new ArrayList<WaypointAndDistance>();
-        for (int count = 0; count < localWaypoints.size(); count++){
-            Waypoint temp = localWaypoints.get(count);
 
+        for (Waypoint temp : localWaypoints){
             WaypointAndDistance distTemp = new WaypointAndDistance(temp, currentLatitude, currentLongitude);
             localDistances.add(distTemp);
-            localWaypoints.remove(temp);
         }
+        localWaypoints.clear();
         Collections.sort(localDistances,new DistanceComparator());
 
         for (WaypointAndDistance temp : localDistances){
             localWaypoints.add(temp.waypoint);
+            addLocalWaypointButtons(temp.waypoint);
         }
-
-
     }
     public void sortPublicWaypoints(DataSnapshot dataSnapshot){
-        //Create a banner to separate public waypoints
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT);
-        final LinearLayout mainLayout = findViewById(R.id.layout);
-        final TextView publicPts = new TextView(this);
-        String localTxt = "Public Waypoints:";
-        publicPts.setText(localTxt);
-        publicPts.setLayoutParams(params);
-        publicPts.setTextSize(25);
-
-        mainLayout.addView(publicPts);
         List<WaypointAndDistance> publicDistances = new ArrayList<WaypointAndDistance>();
         for(DataSnapshot data : dataSnapshot.getChildren()) {
             final Waypoint temp = data.getValue(Waypoint.class);
