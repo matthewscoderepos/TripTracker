@@ -2,6 +2,7 @@ package com.matthewericpeter.triptracker;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -53,10 +54,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -78,6 +83,7 @@ public class GoogleMapsActivity extends AppCompatActivity
     Location mLastLocation;
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
+    Trip currentTrip = new Trip();
     //List<LatLng> trip = new ArrayList<>();
     List<Trip> trips = new ArrayList<>();
     List<Waypoint> localWaypoints = new ArrayList<>();
@@ -144,6 +150,18 @@ public class GoogleMapsActivity extends AppCompatActivity
             mapFrag.getMapAsync(this);
         }
 
+        if (savedInstanceState!=null){
+            if (savedInstanceState.containsKey("currentTrip")){
+                Trip t = (Trip) savedInstanceState.getSerializable("currentTrip");
+                for(int i = 0; i < t.lat.size(); i++){
+                    MarkerOptions markerOptions = new MarkerOptions();
+                    LatLng latLng = new LatLng(t.lat.get(i), t.lng.get(i));
+                    markerOptions.position(latLng);
+                    markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));
+                    mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+                }
+            }
+        }
 
         //Getting Buttons
         final Button menu = this.findViewById(R.id.menuButton);
@@ -269,9 +287,6 @@ public class GoogleMapsActivity extends AppCompatActivity
                     Toast.makeText(GoogleMapsActivity.this, tripName + " Ended", Toast.LENGTH_LONG).show();
                     Log.i("Trip Ended", name.getText().toString());
 
-                    //ADDING THE TRIP TO A LIST OF TRIPS OR JSON OR SOMETHING
-                    //AS OF RIGHT NOW WE JUST LOSE THE latLng'S
-
                     WriteTrips();
 
                     //clear the trip list so we can start a new trip without keeping the last trip
@@ -296,11 +311,12 @@ public class GoogleMapsActivity extends AppCompatActivity
                                 startTrip.setText(getString(R.string.end_trip));
 
                                 Trip trip = new Trip();
-                                trip.name = tripName;
-                                trip.startTime = currentTime;
-                                trip.startLat = mLastLocation.getLatitude();
-                                trip.startLng = mLastLocation.getLongitude();
-                                trips.add(trip);
+                                currentTrip = trip;
+                                currentTrip.name = tripName;
+                                currentTrip.startTime = currentTime;
+                                currentTrip.startLat = mLastLocation.getLatitude();
+                                currentTrip.startLng = mLastLocation.getLongitude();
+                                trips.add(currentTrip);
                                 //This is debug stuff, still useful for the user to see that it was added though
                                 Toast.makeText(GoogleMapsActivity.this, name.getText().toString() + " Started", Toast.LENGTH_LONG).show();
                                 dialog.cancel();
@@ -501,7 +517,37 @@ public class GoogleMapsActivity extends AppCompatActivity
     @Override
     public void onPause() {
         super.onPause();
+        FileOutputStream out = null;
 
+        try
+        {
+            out = openFileOutput("currentTripBackup", Context.MODE_PRIVATE);
+
+            try
+            {
+                ObjectOutputStream oos = new ObjectOutputStream(out);
+                oos.writeObject(currentTrip);
+            }
+            catch(IOException e)
+            {
+                Log.d(this.getClass().toString(), e.getMessage());
+            }
+        }
+        catch(FileNotFoundException e)
+        {
+            Log.d(this.getClass().toString(), e.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                if(out != null) out.close();
+            }
+            catch(IOException e)
+            {
+                Log.d(this.getClass().toString(), e.getMessage());
+            }
+        }
 
         //stop location updates when Activity is no longer active
         if (mFusedLocationClient != null) {
@@ -514,6 +560,52 @@ public class GoogleMapsActivity extends AppCompatActivity
         super.onResume();
         mLocationCallback = getmLocationCallback();
 
+
+        FileInputStream in = null;
+        try
+        {
+            in = openFileInput("GameModelBackup");
+            ObjectInputStream oos = new ObjectInputStream(in);
+            try
+            {
+                currentTrip = (Trip)oos.readObject();
+            }
+            catch(ClassNotFoundException e)
+            {
+                currentTrip = null;
+            }
+        }
+        catch(IOException e)
+        {
+            Log.d(this.getClass().toString(), e.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                if(in != null) in.close();
+            }
+            catch(IOException e) {}
+        }
+
+        if (currentTrip != null && inTrip) {
+            for (int i = 0; i < currentTrip.lat.size(); i++) {
+                MarkerOptions markerOptions = new MarkerOptions();
+                LatLng latLng = new LatLng(currentTrip.lat.get(i), currentTrip.lng.get(i));
+                markerOptions.position(latLng);
+                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));
+                mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+            }
+        }
+        else {
+            currentTrip = new Trip();
+            //clear the map of all markers
+            if (mGoogleMap != null) {
+                mGoogleMap.clear();
+                //re-add the waypoint map markers
+                AddWaypoints();
+            }
+        }
 
         if (mFusedLocationClient == null) {
             if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -538,44 +630,16 @@ public class GoogleMapsActivity extends AppCompatActivity
         }
     }
 
-    //@Override
-    //public void onRestart() {
-//        super.onRestart();
-//
-//        mLocationCallback = getmLocationCallback();
-//
-//        if (mFusedLocationClient == null) {
-//            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                if (ContextCompat.checkSelfPermission(this,
-//                        Manifest.permission.ACCESS_FINE_LOCATION)
-//                        == PackageManager.PERMISSION_GRANTED) {
-//                    mLocationRequest = new LocationRequest();
-//                    mLocationRequest.setInterval(1000);
-//                    mLocationRequest.setFastestInterval(1000);
-//                    mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-//                    //Location Permission already granted
-//                    mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-//                    mGoogleMap.setMyLocationEnabled(true);
-//                } else {
-//                    //Request Location Permission
-//                    checkLocationPermission();
-//                }
-//            } else {
-//                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-//                mGoogleMap.setMyLocationEnabled(true);
-//            }
-//        }
-//    }
-
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
         // Save UI state changes to the savedInstanceState.
         // This bundle will be passed to onCreate if the process is
         // killed and restarted.
         savedInstanceState.putBoolean("inTrip", inTrip);
         savedInstanceState.putBoolean("autoMoveCamera", autoMoveCamera);
+        super.onSaveInstanceState(savedInstanceState);
+
     }
 
     @Override
@@ -731,7 +795,6 @@ public class GoogleMapsActivity extends AppCompatActivity
                             MarkerOptions markerOptions = new MarkerOptions();
                             LatLng latLng = new LatLng(t.lat.get(i), t.lng.get(i));
                             markerOptions.position(latLng);
-                            //markerOptions.title(t.name);
                             markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.dot));
                             mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
                         }
