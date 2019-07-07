@@ -600,11 +600,11 @@ public class GoogleMapsActivity extends AppCompatActivity
         else {
             currentTrip = new Trip();
             //clear the map of all markers
-            if (mGoogleMap != null) {
+            /*if (mGoogleMap != null) {
                 mGoogleMap.clear();
-                //re-add the waypoint map markers
+                re-add the waypoint map markers
                 AddWaypoints();
-            }
+            }*/
         }
 
         if (mFusedLocationClient == null) {
@@ -759,8 +759,9 @@ public class GoogleMapsActivity extends AppCompatActivity
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        mGoogleMap.clear();
+
         if (requestCode == PICK_WAYPOINTS_REQUEST) {
+            mGoogleMap.clear();
             if (resultCode == RESULT_OK) {
                 //waypointManager sent back a list of waypoints.. load them
                 displayWaypoints = (List<Waypoint>) data.getSerializableExtra("DISPLAY_LIST");
@@ -785,10 +786,13 @@ public class GoogleMapsActivity extends AppCompatActivity
         to return result code see: WaypointActivity.java (lines:110-113)
         */
         if (requestCode == PICK_TRIP_REQUEST) {
+            mGoogleMap.clear();
+            AddWaypoints();
             if (resultCode == RESULT_OK) {
                 //trip manager returned with a trip, fetch and display
                 Trip t = (Trip) data.getSerializableExtra("TRIP");
                 if (t != null) {
+                    Log.i("&&&", t.name);
                     boolean type = (boolean) data.getSerializableExtra("TYPE");
                     if (type) {
                         for (int i = 0; i < t.lat.size(); i++) {
