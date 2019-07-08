@@ -110,9 +110,9 @@ public class TripManager extends AppCompatActivity {
                     Location.distanceBetween(t.lat.get(i),t.lng.get(i),t.lat.get(i+1),t.lng.get(i+1),results);
                     distanceTraveled += results[0];
                 }
-                distanceText.setText(String.format("%s meters", String.valueOf(distanceTraveled)));
+                distanceText.setText(String.format("%.4s miles", String.valueOf(distanceTraveled / 1609.344))); //meters->miles
                 double speed = distanceTraveled/timeElapsed;
-                speed = speed*2236.936; //meters/millisecond -> mph conversion
+                speed = speed * 2236.936; //meters/millisecond -> mph conversion
                 speedText.setText(String.format("%.4s mph", speed));
 
 
